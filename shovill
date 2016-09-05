@@ -1,0 +1,161 @@
+#!/usr/bin/env perl
+use strict;
+use Data::Dumper;
+use File::Path qw(make_path remove_tree);
+use File::Spec;
+use List::Util qw(min max);
+use Cwd;
+
+my(@Options, $debug, $kmers, $gsize, $R1, $R2, $outdir, $force, $cpus, $correction, $asm, $careful, $opts);
+setOptions();
+
+# Options
+-r $R1 or err("Can't read --R1 $R1");
+-r $R2 or err("Can't read --R2 $R2");
+$gsize or err("Please provide estimated genome size --gsize");
+$gsize = guess_bp($gsize);
+$cpus =~ m/^\d+$/ or err("Invalid --cpus");
+
+# Make output folder
+make_folder($outdir);
+$outdir = File::Spec->rel2abs($outdir);
+$R1 = File::Spec->rel2abs($R1);
+$R2 = File::Spec->rel2abs($R2);
+#msg("R1: $R1");
+#msg("R2: $R2");
+
+msg("Changing into folder: $outdir");
+my $cwd = getcwd();
+chdir($outdir);
+run_cmd("ln -s \Q$R1\E R1.fq.gz");
+run_cmd("ln -s \Q$R2\E R2.fq.gz");
+
+# Correct reads
+msg("Correcting reads with 'Lighter'");
+run_cmd("lighter -od . -r R1.fq.gz -r R2.fq.gz -K 32 $gsize -t $cpus -maxcor 2");
+
+# Overlap reads
+msg("Overlapping reads with 'FLASH'");
+run_cmd("flash -d . -o flash -z -M 300 -t $cpus R1.cor.fq.gz R2.cor.fq.gz");
+
+# Running Spades
+msg("Running SPAdes");
+run_cmd(
+  "spades.py -1 flash.notCombined_1.fastq.gz -2 flash.notCombined_2.fastq.gz -s flash.extendedFrags.fastq.gz"
+ ." --only-assembler --threads $cpus --memory 32 -o . --tmp-dir /tmp -k $kmers $opts"
+);
+
+if (0 and $correction) {
+  my $target = "$asm.fasta";
+  -r $target or err("Can not see '$target' file to correct!");
+  msg("Checking for assembly errors in $target");
+  run_cmd("bwa index $target");
+  run_cmd("bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz | samtools sort -T /tmp/samtools.$$ -o aln.bam");
+  run_cmd("samtools index aln.bam");
+
+  msg("Correcting errors in $target");
+  run_cmd("pilon --genome $target --frags aln.bam --output corrected --threads $cpus --minmq 60 --minqual 10 --vcf --changes");
+}
+
+msg("Returning to original folder: $cwd");
+chdir($cwd);
+#run_cmd("find $outdir -type f");
+exit(0);
+
+#----------------------------------------------------------------------
+sub make_folder {
+  my($outdir) = @_;
+  if (-d $outdir) {
+    if ($force) {
+      msg("Forced removal of existing --outdir $outdir (please wait)");
+      remove_tree($outdir);
+    }
+    else {
+      err("Folder '$outdir' already exists. Try using --force");
+    }
+  }
+  make_path($outdir);
+}
+
+#----------------------------------------------------------------------
+sub guess_bp {
+  my($s) = @_;
+  my %mult = ('G'=>1E9,'M'=>1E6,'K'=>1E3);
+  $s =~ m/^([\d\.]+)([GMK])?$/i or die "Couldn't parse '$s'";
+  my $bp = $1;
+  $bp = $bp * $mult{uc($2)} if defined $2;
+  return $bp;
+}
+
+#----------------------------------------------------------------------
+sub run_cmd {
+  my($cmd, $quiet) = @_;
+  msg("Running: $cmd") unless $quiet;
+  system($cmd)==0 or err("Error $? running command");
+}
+
+#----------------------------------------------------------------------
+sub msg {
+  print STDERR "@_\n";
+}
+      
+#----------------------------------------------------------------------
+sub err {
+  msg(@_);
+  exit(1);
+}
+
+#----------------------------------------------------------------------
+sub num_cpus {
+  my($num)= qx(getconf _NPROCESSORS_ONLN); # POSIX
+  chomp $num;
+  return $num || 1;
+}
+   
+#----------------------------------------------------------------------
+# Option setting routines
+
+sub setOptions {
+  use Getopt::Long;
+
+  @Options = (
+    {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
+    {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Debug info"},
+    {OPT=>"R1=s",  VAR=>\$R1, DEFAULT=>'', DESC=>"Read 1 FASTQ"},
+    {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
+    {OPT=>"gsize=s",  VAR=>\$gsize, DEFAULT=>'4.0M', DESC=>"Estimated genome size (for error correction)"},
+    {OPT=>"outdir=s",  VAR=>\$outdir, DEFAULT=>'', DESC=>"Output folder"},
+    {OPT=>"force!",  VAR=>\$force, DEFAULT=>0, DESC=>"Force overwite of existing"},
+    {OPT=>"cpus=i",  VAR=>\$cpus, DEFAULT=>num_cpus(), DESC=>"Number of CPUs to waste"},
+    {OPT=>"kmers=s",  VAR=>\$kmers, DEFAULT=>'31,61,91,121', DESC=>"K-mers to use"},
+#    {OPT=>"careful!",  VAR=>\$careful, DEFAULT=>0, DESC=>"Use SPAdes careful mode"},
+    {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --careful ..."},
+#    {OPT=>"correction!",  VAR=>\$correction, DEFAULT=>0, DESC=>"Post-correct assembly errors"},
+#    {OPT=>"asm=s",  VAR=>\$asm, DEFAULT=>'before_rr', DESC=>"Correct either: before_rr contigs scaffolds"},
+  );
+
+  (!@ARGV) && (usage());
+
+  &GetOptions(map {$_->{OPT}, $_->{VAR}} @Options) || usage();
+
+  # Now setup default values.
+  foreach (@Options) {
+    if (defined($_->{DEFAULT}) && !defined(${$_->{VAR}})) {
+      ${$_->{VAR}} = $_->{DEFAULT};
+    }
+  }
+}
+
+sub usage {
+  my $EXE = $0;
+  $EXE =~ s{^.*/}{};
+  print "Usage:\n  $EXE [options] --outdir DIR --gsize 4.2M --R1 R1.fq.gz --R2 R2.fq.gz\n";
+  print "Options:\n";
+  foreach (@Options) {
+    printf "  --%-13s %s%s.\n",$_->{OPT},$_->{DESC},
+           defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
+  }
+  exit(1);
+}
+ 
+#----------------------------------------------------------------------
