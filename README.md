@@ -13,12 +13,23 @@ the primary assembly step to get near-identical results in far less time.
 
 ## Main steps
 
-1. Correct reads conservatively
+1. Estimate genome size and read length distribution from reads (SOON)
+2. Correct reads conservatively
 2. Pre-overlap paired-end reads
-3. Assemble with "vanilla" SPAdes with modified kmer range
-4. Correct minor assembly errors (optional)
+3. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
+5. Use contigs not scaffolds
+4. Correct minor assembly errors (SOON)
 
 ## Installation
+
+### Homebrew
+
+```
+brew tap homebrew/science
+brew install shovill
+```
+Using Homebrew will install all the dependencies for you: 
+[Linux](http://linuxbrew.sh) or [MacOS](http://brew.sh)
 
 ### Source
 
@@ -35,17 +46,6 @@ You will need to install all the dependencies manually:
 * PILON
 * KmerStream
 
-### Homebrew
-
-**NOT READY YET**
-
-```
-brew tap homebrew/science
-brew tap tseemann/bioinformatics-linux
-brew install shovill
-```
-Using Homebrew will install all the dependencies for you.
-
 ## Feedback
 
 Please file questions, bugs or ideas to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
@@ -60,9 +60,8 @@ Not published yet.
 
 ## Authors
 
-* Torsten Seemann
+* *Torsten Seemann*
 * Jason Kwong
 * Anders Goncalves da Silva
 * Mark Schultz
 * Dieter Bulach
-
