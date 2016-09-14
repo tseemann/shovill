@@ -5,11 +5,16 @@ use File::Path qw(make_path remove_tree);
 use File::Spec;
 use List::Util qw(min max);
 use Cwd;
+use File::Basename;
 
-my(@Options, $debug, $kmers, $gsize, $R1, $R2, $outdir, $force, $cpus, $correction, $asm, $careful, $opts);
-setOptions();
+# Globals
+my $EXE = basename($0);
+my $VERSION = "0.1";
 
 # Options
+my(@Options, $debug, $version, $kmers, $gsize, $R1, $R2, $outdir, $force, $cpus, $correction, $asm, $careful, $opts);
+setOptions();
+
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 $gsize or err("Please provide estimated genome size --gsize");
@@ -111,6 +116,12 @@ sub num_cpus {
   chomp $num;
   return $num || 1;
 }
+
+#----------------------------------------------------------------------
+sub version {
+  print "$EXE $VERSION\n";
+  exit(0);
+}
    
 #----------------------------------------------------------------------
 # Option setting routines
@@ -121,6 +132,7 @@ sub setOptions {
   @Options = (
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Debug info"},
+    {OPT=>"version!",  VAR=>\&version, DESC=>"Print version and exit"},
     {OPT=>"R1=s",  VAR=>\$R1, DEFAULT=>'', DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
     {OPT=>"gsize=s",  VAR=>\$gsize, DEFAULT=>'4.0M', DESC=>"Estimated genome size (for error correction)"},
