@@ -45,6 +45,8 @@ You will need to install all the dependencies manually:
 * BWA MEM
 * PILON
 * KmerStream
+* seqtk
+* Java
 
 ## Feedback
 
