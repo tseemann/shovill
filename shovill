@@ -23,6 +23,7 @@ my(@Options, $debug, $version,
              $nocorr, $asm);
 setOptions();
 
+# Check options
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 #$gsize or err("Please provide estimated genome size --gsize");
@@ -30,6 +31,17 @@ setOptions();
 $cpus =~ m/^\d+$/ or err("Invalid --cpus");
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
+
+# Check we have the required binaries
+for my $exe (qw(seqtk KmerStream lighter flash spades.py bwa samtools pilon)) {
+  my $fullexe = find_exe($exe);
+  if ($fullexe) {
+    msg("Using $exe - $fullexe");
+  }
+  else {
+    err("Could not find '$exe' - please install it.");
+  }
+}
 
 # Make output folder
 make_folder($outdir);
@@ -162,6 +174,16 @@ sub run_cmd {
   my($cmd, $quiet) = @_;
   msg("Running: $cmd") unless $quiet;
   system($cmd)==0 or err("Error $? running command");
+}
+
+#----------------------------------------------------------------------
+sub find_exe {
+  my($bin) = shift;
+  for my $dir (File::Spec->path) {
+    my $exe = File::Spec->catfile($dir, $bin);
+    return $exe if -x $exe;
+  }
+  return;
 }
 
 #----------------------------------------------------------------------
