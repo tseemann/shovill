@@ -225,7 +225,7 @@ sub setOptions {
 sub usage {
   my $EXE = $0;
   $EXE =~ s{^.*/}{};
-  print "Usage:\n  $EXE [options] --outdir DIR --gsize 4.2M --R1 R1.fq.gz --R2 R2.fq.gz\n";
+  print "Usage:\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
   print "Options:\n";
   foreach (@Options) {
     printf "  --%-13s %s%s.\n",$_->{OPT},$_->{DESC},
