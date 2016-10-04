@@ -48,7 +48,7 @@ my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
 
 # Check we have the required binaries
-for my $exe (qw(seqtk KmerStream lighter flash spades.py bwa samtools pilon)) {
+for my $exe (qw(seqtk KmerStream KmerStreamEstimate.py datamash lighter flash spades.py bwa samtools java pilon)) {
   my $fullexe = find_exe($exe);
   if ($fullexe) {
     msg("Using $exe - $fullexe");

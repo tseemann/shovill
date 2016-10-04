@@ -26,6 +26,7 @@ the primary assembly step to get near-identical results in far less time.
 
 ```
 brew tap homebrew/science
+brew tap tseemann/bioinformatics-linux
 brew install shovill
 ```
 Using Homebrew will install all the dependencies for you: 
