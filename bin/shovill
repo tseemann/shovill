@@ -12,7 +12,7 @@ use Time::Seconds;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.1";
+my $VERSION = "0.2";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
