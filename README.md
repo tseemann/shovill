@@ -42,11 +42,12 @@ You will need to install all the dependencies manually:
 * SPAdes
 * Lighter
 * FLASH
-* SAMtools
+* SAMtools >= 1.3
 * BWA MEM
 * PILON
 * KmerStream
 * seqtk
+* datamash
 * Java
 
 ## Feedback
