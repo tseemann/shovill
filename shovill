@@ -53,8 +53,8 @@ my @len = sort { $a <=> $b } (map { length($_)-1 } <READSAMPLE>);
 close READSAMPLE;
 my $RLEN = $len[-1];
 msg("Read length looks like $RLEN bp");
-$MAXK = min( $MAXK, int(0.8 * $RLEN) );
-msg("Setting maximum k-mer to $MAXK");
+$MAX_K = min( $MAX_K, int(0.8 * $RLEN) );
+msg("Setting maximum k-mer to $MAX_K");
 
 # Choosing some kmers
 unless ($kmers) {
