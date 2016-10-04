@@ -6,15 +6,30 @@ use File::Spec;
 use List::Util qw(min max);
 use Cwd;
 use File::Basename;
+use Time::Piece;
+use Time::Seconds;
 
 # Globals
 my $EXE = basename($0);
 my $VERSION = "0.1";
+my $URL = "https://github.com/tseemann/shovill";
+my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
+my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
 my $SUBREADS = 10_000;
 my $MIN_K = 21;
 my $MAX_K = 127;
+
+# Say hello
+msg("Hello", $ENV{USER} || 'stranger');
+msg("This is $EXE $VERSION");
+msg("Written by $AUTHOR");
+msg("Homepage is $URL");
+msg("Operating system is $OPSYS");
+my $starttime = localtime;
+msg("Local time is $starttime");
+msg("You ran: $0 @ARGV");
 
 # Options
 my(@Options, $debug, $version, 
@@ -141,7 +156,29 @@ unless ($keepfiles) {
 msg("Returning to original folder: $cwd");
 chdir($cwd);
 msg("Results in: $outdir");
-#run_cmd("find $outdir -type f");
+
+# Say our goodbyes
+my $endtime = localtime;
+my $walltime = $endtime - $starttime;
+my $pretty = sprintf "%.2f minutes", $walltime->minutes;
+msg("Walltime used: $pretty");
+#msg("If you use this result please cite the Shovill paper:");
+#msg("Seemann T (2017) Shovill: rapid prokaryotic genome assembly. BioRxiv doi:XXXX-YYYY");
+#msg("Type '$EXE --citation' for more details.");
+
+my @motd = (
+  "More correct contigs is better than fewer wrong contigs.",
+  "A shovel will move more dirt than a spade.",
+  "Wishing you a life free of misassemblies.",
+  "Found a bug? Post it at $URL/issues",
+  "Have a suggestion? Tell me at $URL/issues",
+  "The $EXE Snippy manual is at $URL/blob/master/README.md",
+  "Did you know? $EXE is a play on the words 'Spades' and 'Illumina'",
+);
+srand( $$ + $walltime + $MAX_K ); # seed
+msg( $motd[ int(rand(scalar(@motd))) ] );
+msg("Done.");
+
 exit(0);
 
 #----------------------------------------------------------------------
