@@ -3,6 +3,7 @@ use strict;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use File::Spec;
+use File::Copy;
 use List::Util qw(min max);
 use Cwd;
 use File::Basename;
@@ -35,7 +36,7 @@ msg("You ran: $0 @ARGV");
 my(@Options, $debug, $version, 
              $outdir, $force, $cpus, $tmpdir, $keepfiles,
              $kmers, $gsize, $R1, $R2, $opts,
-             $nocorr, $asm);
+             $nocorr, $asm, $minlen);
 setOptions();
 
 # Check options
@@ -82,6 +83,10 @@ my $RLEN = $len[-1];
 msg("Read length looks like $RLEN bp");
 $MAX_K = min( $MAX_K, int(0.8 * $RLEN) );
 msg("Setting maximum k-mer to $MAX_K");
+if ($minlen == 0) {
+  msg("Setting --minlen to $RLEN");
+  $minlen = $RLEN
+}
 
 # Choosing some kmers
 unless ($kmers) {
@@ -124,6 +129,7 @@ run_cmd(
  ." --only-assembler --threads $cpus --memory 32 -o . --tmp-dir $tmpdir -k $kmers $opts"
 );
 
+# Correct contigs with Pilon
 unless ($nocorr) {
   my $target = "$asm.fasta";
   -r $target or err("Can not see '$target' file to correct!");
@@ -134,10 +140,33 @@ unless ($nocorr) {
   run_cmd("samtools index $BAM");
 
   msg("Correcting errors in $target");
-  run_cmd("pilon --genome $target --frags $BAM --output corrected --threads $cpus --changes --mindepth 0.5");  
+  run_cmd("pilon --genome $target --frags $BAM --output corrected --threads $cpus --changes --mindepth 0.5");
+  move($target, "$target.uncorrected");
+  move("corrected.fasta", $target);
 }
 else {
+  msg("User supplied --nocorr, so not correcting contigs.");
 }
+
+# Write final answer with nicer names
+my $ncontigs = 0;
+my $nbases = 0;
+my $seq = read_fasta("$asm.fasta");
+my %len = map { ( $_ => length($seq->{$_}) ) } (keys %{$seq});
+for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
+  my $len = length($seq->{$id});
+  if ($len < $minlen) {
+    delete $seq->{$id};
+  } 
+  else {
+    $ncontigs++;
+    $nbases += $len;
+    my $newid = sprintf "contig%05d %s", $ncontigs, $id;
+    $seq->{$newid} = $seq->{$id};
+    delete $seq->{$id};
+  }
+}
+write_fasta("contigs.fa", $seq);
 
 unless ($keepfiles) {
   # corrected, overlapped and symlinked original reads
@@ -156,7 +185,8 @@ unless ($keepfiles) {
 msg("Returning to original folder: $cwd");
 chdir($cwd);
 msg("Results in: $outdir");
-
+msg("Final assembly in: $outdir/contigs.fa");
+msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp."); 
 # Say our goodbyes
 my $endtime = localtime;
 my $walltime = $endtime - $starttime;
@@ -248,6 +278,36 @@ sub version {
 }
    
 #----------------------------------------------------------------------
+sub read_fasta {
+  my($fname) = @_;
+  my $seq;
+  my $id;
+  open my $FASTA, '<', $fname or err("Could not open $fname");
+  while (my $line = <$FASTA>) {
+    chomp $line;
+    if ($line =~ m/^>(\S+)/) {
+      $id = $1;
+      $seq->{$id} = '';
+    }
+    else {
+      $seq->{$id} .= $line;
+    }
+  }
+  close $FASTA;
+  return $seq;
+}
+
+#----------------------------------------------------------------------
+sub write_fasta {
+  my($fname, $seq) = @_;
+  open my $FASTA, '>', $fname or err("Could not write to $fname");
+  for my $id (sort { $a cmp $b } keys %{$seq}) {
+    print $FASTA ">$id\n", $seq->{$id}, "\n";
+  }
+  close $FASTA;
+}
+   
+#----------------------------------------------------------------------
 # Option setting routines
 
 sub setOptions {
@@ -263,9 +323,10 @@ sub setOptions {
     {OPT=>"R1=s",  VAR=>\$R1, DEFAULT=>'', DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
     {OPT=>"gsize=s",  VAR=>\$gsize, DEFAULT=>'', DESC=>"Estimated genome size (blank=AUTO)"},
-    {OPT=>"kmers=s",  VAR=>\$kmers, DEFAULT=>'', DESC=>"K-mers to use (blank=AUTO"},
+    {OPT=>"kmers=s",  VAR=>\$kmers, DEFAULT=>'', DESC=>"K-mers to use <blank=AUTO>"},
     {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --careful ..."},
     {OPT=>"nocorr!",  VAR=>\$nocorr, DEFAULT=>0, DESC=>"Disable post-assembly correction"},
+    {OPT=>"minlen=i",  VAR=>\$minlen, DEFAULT=>0, DESC=>"Minimum contig length <0=AUTO>"},
     {OPT=>"asm=s",  VAR=>\$asm, DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",  VAR=>\$tmpdir, DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
     {OPT=>"keepfiles!",  VAR=>\$keepfiles, DEFAULT=>0, DESC=>"Keep intermediate files"},
