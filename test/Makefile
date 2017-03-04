@@ -1,6 +1,8 @@
 
+OPTS=
+
 test: reads
-	../bin/shovill --outdir test.out --R1 test_R1.fq.gz --R2 test_R2.fq.gz --gsize 0.2M --force --kmers 51,91
+	../bin/shovill --outdir test.out --R1 test_R1.fq.gz --R2 test_R2.fq.gz --trim --force $(OPTS)
 
 reads: test_R1.fq.gz test_R2.fq.gz
 
