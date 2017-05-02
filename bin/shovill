@@ -23,7 +23,7 @@ my $ADAPTERS = "$FindBin::RealBin/../db/trimmomatic.fa";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
 my $MIN_K = 31;   # sensible minimum, although prefer higher
 my $MAX_K = 127;  # spades max
-my $MINBQ = 10;   # for trimming and stats
+my $MINBQ = 3;    # for trimming and stats
 my @LOG= ();      # global log file, saved at end
 
 # Options
@@ -189,7 +189,7 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
     delete $seq->{$id};
   } 
   elsif ($cov < $mincov) {
-    msg("Removing low coverage contig (< $cov x): $id");
+    msg("Removing low coverage contig (< $mincov x): $id");
     delete $seq->{$id};
   }
   else {
@@ -203,9 +203,9 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
 write_fasta("contigs.fa", $seq);
 
 msg("Writing $EXE log file.");
-write_file("00-$EXE.log", @LOG);
 move("spades.log", "60-spades.log");
 
+# Cleanup time!
 unless ($keepfiles) {
   # corrected, overlapped and symlinked original reads
   unlink glob("*q.gz");
@@ -222,12 +222,6 @@ unless ($keepfiles) {
   unlink "params.txt", "dataset.info", "flash.histogram", "input_dataset.yaml";
 }
 
-
-msg("Returning to original folder: $cwd");
-chdir($cwd);
-msg("Results in: $outdir");
-msg("Final assembly in: $outdir/contigs.fa");
-msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp."); 
 # Say our goodbyes
 my $endtime = localtime;
 my $walltime = $endtime - $starttime;
@@ -237,19 +231,31 @@ msg("Walltime used: $pretty");
 #msg("Seemann T (2017) Shovill: rapid prokaryotic genome assembly. BioRxiv doi:XXXX-YYYY");
 #msg("Type '$EXE --citation' for more details.");
 
+msg("Results in: $outdir");
+msg("Final assembly in: $outdir/contigs.fa");
+msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp."); 
+
+# Inspiration
 my @motd = (
   "More correct contigs is better than fewer wrong contigs.",
   "A shovel will move more dirt than a spade.",
   "Wishing you a life free of misassemblies.",
-  "Found a bug? Post it at $URL/issues",
-  "Have a suggestion? Tell me at $URL/issues",
-  "The $EXE Shovill manual is at $URL/blob/master/README.md",
+  "Remember - genomic repeats > ~800bp will be collapsed into single contigs.",
+  "Remember, an assembly is just a _hypothesis_ of the original sequence!",
+  "Use Bandage to inspect the .gfa/.fastg assembly graph: https://rrwick.github.io/Bandage/",
+  "Found a bug in $EXE? Post it at $URL/issues",
+  "Have a suggestion for $EXE? Tell me at $URL/issues",
+  "The $EXE manual is at $URL/blob/master/README.md",
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
+  "The name '$EXE' is pronounced as 'shovel' in English",
 );
 srand( $$ + $walltime + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
 msg("Done.");
 
+# Dump log and return to original folder
+write_file("00-$EXE.log", @LOG);
+chdir($cwd);
 exit(0);
 
 #----------------------------------------------------------------------
@@ -390,9 +396,9 @@ sub setOptions {
     {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --careful ..."},
     {OPT=>"nocorr!",  VAR=>\$nocorr, DEFAULT=>0, DESC=>"Disable post-assembly correction"},
     {OPT=>"trim!",  VAR=>\$trim, DEFAULT=>0, DESC=>"Use Trimmomatic to remove common adaptors first"},
-    {OPT=>"trimopt=s",  VAR=>\$trimopt, DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30", DESC=>"Trimmomatic options"},
+    {OPT=>"trimopt=s",  VAR=>\$trimopt, DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
     {OPT=>"minlen=i",  VAR=>\$minlen, DEFAULT=>0, DESC=>"Minimum contig length <0=AUTO>"},
-    {OPT=>"mincov=f",  VAR=>\$mincov, DEFAULT=>0, DESC=>"Minimum contig coverage <0=AUTO>"},
+    {OPT=>"mincov=f",  VAR=>\$mincov, DEFAULT=>2, DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",  VAR=>\$asm, DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",  VAR=>\$tmpdir, DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
     {OPT=>"keepfiles!",  VAR=>\$keepfiles, DEFAULT=>0, DESC=>"Keep intermediate files"},
