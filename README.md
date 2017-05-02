@@ -21,6 +21,30 @@ the primary assembly step to get near-identical results in far less time.
 6. Use contigs not scaffolds
 7. Correct minor assembly errors
 
+## Quick Start
+
+```bash
+% shovill --outdir mrsa --R1 staph_R1.fq.gz --R2 staph_R2.fq.gz
+
+<snip>
+Final assembly in: mrsa/contigs.fa
+It contains 17 (min=150) contigs totalling 169611 bp.
+Done.
+
+% ls mrsa
+
+00-shovill.log  30-trimmomatic.log  60-spades.log  assembly_graph.fastg  contigs.fa     pilon.changes
+10-seqtk.tab    40-lighter.log      70-bwa.log     assembly_graph.gfa    contigs.fasta  scaffolds.fasta
+20-kmc.log      50-flash.log        80-pilon.log   before_rr.fasta       flash.hist
+
+% head -n 4 mrsa/contigs.fa
+
+>contig00001 NODE_1_length_54882_cov_28.4218_pilon
+ATAACGCCCTGCTGGCCCAGGTCATTTTATCCAATCTGGACCTCTCGGCTCGCTTTGAAGAAT
+GAGCGAATTCGCCGTTCAGTCCGCTGGACTTCGGACTTAAAGCCGCCTAAAACTGCACGAACC
+ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
+```
+
 ## Installation
 
 ### Homebrew
