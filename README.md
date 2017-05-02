@@ -14,7 +14,7 @@ the primary assembly step to get near-identical results in far less time.
 ## Main steps
 
 1. Estimate genome size and read length distribution from reads
-2. Trim adapters from reads
+2. Trim adapters from reads (with `--trim` only)
 3. Correct reads conservatively
 4. Pre-overlap paired-end reads
 5. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
@@ -96,7 +96,8 @@ There is a log file for each of the tools used to generate the assembly:
 ```
 
 As Spades is the most important tool used, some useful output files are
-kept. &#9888; Do not confuse the final `contigs.fa` with these files!
+kept.<br>
+&#9888; Do not confuse the final `contigs.fa` with these files!
 ```
 assembly_graph.fastg
 assembly_graph.gfa
