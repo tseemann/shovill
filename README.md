@@ -75,6 +75,42 @@ You will need to install all the dependencies manually:
 * Java
 * Trimmomatic
 
+## Output files
+
+The most important output file is the final, corrected assembly:
+```
+contigs.fa
+```
+
+There is a log file for each of the tools used to generate the assembly:
+```
+00-shovill.log
+10-seqtk.tab
+20-kmc.log
+30-trimmomatic.log
+40-lighter.log
+50-flash.log
+60-spades.log
+70-bwa.log
+80-pilon.log
+```
+
+As Spades is the most important tool used, some useful output files are
+kept. &#9888; Do not confuse the final `contigs.fa` with these files!
+```
+assembly_graph.fastg
+assembly_graph.gfa
+before_rr.fasta
+contigs.fasta
+scaffolds.fasta
+```
+
+A couple of tool output files are also kept and may be useful to examine:
+```
+flash.hist
+pilon.changes
+```
+
 ## Feedback
 
 Please file questions, bugs or ideas to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
