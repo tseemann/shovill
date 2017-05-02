@@ -13,12 +13,13 @@ the primary assembly step to get near-identical results in far less time.
 
 ## Main steps
 
-1. Estimate genome size and read length distribution from reads (SOON)
-2. Correct reads conservatively
-2. Pre-overlap paired-end reads
-3. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
-5. Use contigs not scaffolds
-4. Correct minor assembly errors (SOON)
+1. Estimate genome size and read length distribution from reads
+2. Trim adapters from reads
+3. Correct reads conservatively
+4. Pre-overlap paired-end reads
+5. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
+6. Use contigs not scaffolds
+7. Correct minor assembly errors
 
 ## Installation
 
@@ -45,10 +46,10 @@ You will need to install all the dependencies manually:
 * SAMtools >= 1.3
 * BWA MEM
 * PILON
-* KmerStream
+* KMC
 * seqtk
-* datamash
 * Java
+* Trimmomatic
 
 ## Feedback
 
@@ -64,7 +65,7 @@ Not published yet.
 
 ## Authors
 
-* *Torsten Seemann*
+* **Torsten Seemann**
 * Jason Kwong
 * Anders Goncalves da Silva
 * Mark Schultz
