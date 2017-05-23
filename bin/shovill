@@ -14,7 +14,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.3";
+my $VERSION = "0.4";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -119,11 +119,11 @@ unless ($minlen) {
 # Choosing some kmers
 unless ($kmers) {
   $MIN_K = 21 if $stat->{'avg_len'} < 75;
-  my $kn = 4; # max(4, $cpus);
+  my $kn = 5; # max(4, $cpus);
   my $ks = max(5, int( ($MAX_K - $MIN_K) / ($kn-1) ) );
   $ks++ if $ks % 2 == 1; # need even step to ensure odd values only
   my @kmers;
-  for (my $k=$MIN_K; $k < $MAX_K; $k+=$ks) {
+  for (my $k=$MIN_K; $k <= $MAX_K; $k+=$ks) {
     push @kmers, $k;
   }
   msg("Estimated K-mers: @kmers [kn=$kn, ks=$ks, kmin=$MIN_K, kmax=$MAX_K]");
