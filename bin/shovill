@@ -14,7 +14,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.5";
+my $VERSION = "0.5.1";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -30,7 +30,7 @@ my @LOG= ();      # global log file, saved at end
 msg("You ran: $0 @ARGV");
 my(@Options, $debug, $version, 
              $outdir, $force, $cpus, $tmpdir, $keepfiles,
-             $kmers, $gsize, $R1, $R2, $opts,
+             $kmers, $gsize, $R1, $R2, $opts, $ram,
              $nocorr, $trim, $trimopt, $asm, $minlen, $mincov);
 setOptions();
 
@@ -52,6 +52,9 @@ $gsize = $gsize ? guess_bp($gsize) : 0;
 is_integer($cpus) or err("Invalid --cpus $cpus");
 is_integer($minlen) or err("Invalid --minlen $minlen");
 is_integer($mincov) or err("Invalid --mincov $mincov");
+is_integer($ram) or err("Invalid --ram $ram");
+$ram >= 4 or err("$EXE will not work with less than 4 GB RAM");
+my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
 
@@ -81,7 +84,7 @@ unless ($gsize) {
   msg("Estimating genome size with 'kmc'");
   # FIXME: want to choose a dynamic kmer cutoff for high cov samples
   my $minkc = 3;  # max(3, int($depth/100));
-  run_cmd("kmc -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
+  run_cmd("kmc -m$ram -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
   my($ucount) = grep { m/unique\s+counted/ } read_file('20-kmc.log');
   $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
   $gsize = $1;
@@ -148,7 +151,7 @@ run_cmd("flash -d . -o flash -z -M 300 -t $cpus R1.cor.fq.gz R2.cor.fq.gz",
 msg("Assembling reads with SPAdes");
 run_cmd(
   "spades.py -1 flash.notCombined_1.fastq.gz -2 flash.notCombined_2.fastq.gz -s flash.extendedFrags.fastq.gz"
- ." --only-assembler --threads $cpus --memory 32 -o . --tmp-dir $tmpdir -k $kmers $opts",
+ ." --only-assembler --threads $cpus --memory $ram -o . --tmp-dir $tmpdir -k $kmers $opts",
  "/dev/null",  # spades makes its own log file
 );
 
@@ -160,7 +163,7 @@ unless ($nocorr) {
   msg("Checking for assembly errors in $target");
   run_cmd("bwa index $target", $logfile);
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz"
-         ." | samtools sort --threads $lesscpus -m 4G --reference $target -T $tmpdir/samtools.$$ -o $BAM)", 
+         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$$ -o $BAM)", 
          $logfile);
   run_cmd("samtools index $BAM", $logfile);
 
@@ -240,7 +243,7 @@ my @motd = (
   "More correct contigs is better than fewer wrong contigs.",
   "A shovel will move more dirt than a spade.",
   "Wishing you a life free of misassemblies.",
-  "Remember - genomic repeats > ~800bp will be collapsed into single contigs.",
+  "Remember, genomic repeats > ~800bp will be collapsed into single contigs.",
   "Remember, an assembly is just a _hypothesis_ of the original sequence!",
   "Use Bandage to inspect the .gfa/.fastg assembly graph: https://rrwick.github.io/Bandage/",
   "Found a bug in $EXE? Post it at $URL/issues",
@@ -401,6 +404,7 @@ sub setOptions {
     {OPT=>"mincov=f",  VAR=>\$mincov, DEFAULT=>2, DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",  VAR=>\$asm, DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",  VAR=>\$tmpdir, DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
+    {OPT=>"ram=i",  VAR=>\$ram, DEFAULT=>32, DESC=>"Try to keep RAM usage below this many GB"},
     {OPT=>"keepfiles!",  VAR=>\$keepfiles, DEFAULT=>0, DESC=>"Keep intermediate files"},
   );
 
