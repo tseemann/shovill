@@ -1,5 +1,5 @@
 # Shovill
-Faster smarter SPAdes assembly of Illumina reads
+Faster SPAdes assembly of Illumina reads
 
 ## Introduction
 
