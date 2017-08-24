@@ -169,7 +169,7 @@ unless ($nocorr) {
 
   msg("Correcting errors in $target");
   run_cmd(
-    "_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $target --frags $BAM --output pilon --threads $cpus --changes --mindepth 0.5",
+    "_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $target --frags $BAM --output pilon --threads $cpus --changes --mindepth 0.25",
     "80-pilon.log");
   move($target, "$target.uncorrected");
   move("pilon.fasta", $target);
