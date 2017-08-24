@@ -396,7 +396,7 @@ sub setOptions {
     {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
     {OPT=>"gsize=s",  VAR=>\$gsize, DEFAULT=>'', DESC=>"Estimated genome size <blank=AUTODETECT>"},
     {OPT=>"kmers=s",  VAR=>\$kmers, DEFAULT=>'', DESC=>"K-mers to use <blank=AUTO>"},
-    {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --careful ..."},
+    {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --sc ..."},
     {OPT=>"nocorr!",  VAR=>\$nocorr, DEFAULT=>0, DESC=>"Disable post-assembly correction"},
     {OPT=>"trim!",  VAR=>\$trim, DEFAULT=>0, DESC=>"Use Trimmomatic to remove common adaptors first"},
     {OPT=>"trimopt=s",  VAR=>\$trimopt, DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
@@ -427,12 +427,17 @@ sub usage {
   print "Author:\n  $AUTHOR\n";
   print "Options:\n";
   foreach (@Options) {
+    my $def = $_->{DEFAULT};
+    if (defined $def) {
+      $def = 'OFF' if $_->{OPT} =~ m/!$/;
+      $def = "'$def'" if $_->{OPT} =~ m/=s$/;
+      $def = " (default: $def)";
+    }
     $_->{OPT} =~ s/!$//;
     $_->{OPT} =~ s/=s$/ XXX/;
     $_->{OPT} =~ s/=i$/ N/;
     $_->{OPT} =~ s/=f$/ n.nn/;
-    printf "  --%-13s %s%s.\n",$_->{OPT},$_->{DESC},
-           defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
+    printf "  --%-13s %s%s\n", $_->{OPT}, $_->{DESC}, $def;
   }
   print "Documentation:\n  $URL\n";
   exit(1);
