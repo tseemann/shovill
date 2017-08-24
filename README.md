@@ -13,7 +13,7 @@ the primary assembly step to get near-identical results in far less time.
 
 ## Main steps
 
-1. Estimate genome size and read length distribution from reads
+1. Estimate genome size and read length from reads (unless `--gsize` provided)
 2. Trim adapters from reads (with `--trim` only)
 3. Correct reads conservatively
 4. Pre-overlap paired-end reads
@@ -112,6 +112,31 @@ flash.hist
 pilon.changes
 ```
 
+## Advanced options
+
+```
+  --help          This help
+  --debug         Debug info (default: OFF)
+  --version       Print version and exit
+  --cpus N        Number of CPUs to use (default: 16)
+  --outdir XXX    Output folder (default: '')
+  --force         Force overwite of existing output folder (default: OFF)
+  --R1 XXX        Read 1 FASTQ (default: '')
+  --R2 XXX        Read 2 FASTQ (default: '')
+  --gsize XXX     Estimated genome size <blank=AUTODETECT> (default: '')
+  --kmers XXX     K-mers to use <blank=AUTO> (default: '')
+  --opts XXX      Extra SPAdes options eg. --plasmid --sc ... (default: '')
+  --nocorr        Disable post-assembly correction (default: OFF)
+  --trim          Use Trimmomatic to remove common adaptors first (default: OFF)
+  --trimopt XXX   Trimmomatic options (default: 'ILLUMINACLIP:/home/tseemann/git/shovill/bin/../db/trimmomatic.fa:1:30:11 LEADING:3 TRAILING:3 MINLEN:30 TOPHRED33')
+  --minlen N      Minimum contig length <0=AUTO> (default: 0)
+  --mincov n.nn   Minimum contig coverage <0=AUTO> (default: 2)
+  --asm XXX       Spades result to correct: before_rr contigs scaffolds (default: 'contigs')
+  --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
+  --ram N         Try to keep RAM usage below this many GB (default: 32)
+  --keepfiles     Keep intermediate files (default: OFF)
+```
+
 ## Feedback
 
 Please file questions, bugs or ideas to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
@@ -129,5 +154,3 @@ Not published yet.
 * **Torsten Seemann**
 * Jason Kwong
 * Anders Goncalves da Silva
-* Mark Schultz
-* Dieter Bulach
