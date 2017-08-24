@@ -27,7 +27,6 @@ my $MINBQ = 3;    # for trimming and stats
 my @LOG= ();      # global log file, saved at end
 
 # Options
-msg("You ran: $0 @ARGV");
 my(@Options, $debug, $version, 
              $outdir, $force, $cpus, $tmpdir, $keepfiles,
              $kmers, $gsize, $R1, $R2, $opts, $ram,
@@ -35,6 +34,7 @@ my(@Options, $debug, $version,
 setOptions();
 
 # Say hello
+msg("You ran: $0 @ARGV");
 msg("Hello", $ENV{USER} || 'stranger');
 msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
@@ -444,3 +444,4 @@ sub usage {
 }
  
 #----------------------------------------------------------------------
+
