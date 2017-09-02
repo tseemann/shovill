@@ -82,6 +82,16 @@ The most important output file is the final, corrected assembly:
 contigs.fa
 ```
 
+The FASTA description of each sequence in `contigs.fa` have space-separated
+`name=value` pairs with the length in bases (`len`), the average coverage
+(`cov`), the number of post-assembly SNP/indel corrections made (`corr`),
+and the original contig name from Spades (`spades`). Two examples are:
+
+```
+>contig00001 len=263154 cov=8.9 corr=1 spades=NODE_1_length_263154_cov_8.86703_pilon
+>contig00041 len=339 cov=8.8 corr=0 spades=NODE_41_length_339_cov_8.77027_pilon
+```
+
 There is a log file for each of the tools used to generate the assembly:
 ```
 00-shovill.log

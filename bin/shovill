@@ -14,7 +14,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.6.1-dev";
+my $VERSION = "0.7.0-dev";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -169,7 +169,7 @@ unless ($nocorr) {
 
   msg("Correcting errors in $target");
   run_cmd(
-    "_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $target --frags $BAM --output pilon --threads $cpus --changes --mindepth 0.25",
+    "_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $target --frags $BAM --fix snps,indels --output pilon --threads $cpus --changes --mindepth 0.25",
     "80-pilon.log");
   move($target, "$target.uncorrected");
   move("pilon.fasta", $target);
@@ -177,6 +177,10 @@ unless ($nocorr) {
 else {
   msg("User supplied --nocorr, so not correcting contigs.");
 }
+
+# Count changes per contig - return a hashref
+my $changes = count_changes("pilon.changes");
+#msg(Dumper($changes)); exit;
 
 # Write final answer with nicer names
 my $ncontigs = 0;
@@ -197,8 +201,12 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
   }
   else {
     $ncontigs++;
-    $nbases += $len{$id};
-    my $newid = sprintf "contig%05d %s", $ncontigs, $id;
+    my $len = $len{$id};
+    $nbases += $len;
+    $cov = sprintf "%.1f", $cov;
+    my $corr = $changes->{$id} || 0;
+    my $desc = "len=$len cov=$cov corr=$corr spades=$id";
+    my $newid = sprintf "contig%05d %s", $ncontigs, $desc;
     $seq->{$newid} = $seq->{$id};
     delete $seq->{$id};
   }
@@ -260,6 +268,23 @@ msg("Done.");
 write_file("00-$EXE.log", @LOG);
 chdir($cwd);
 exit(0);
+
+#----------------------------------------------------------------------
+sub count_changes {
+  my($fname) = @_;
+  my @diffs = read_file($fname);
+  my $diff = {};
+  my $total=0;
+  foreach (@diffs) {
+    # NODE_2_length_262460_cov_10.3709:152516 NODE_2_length_262460_cov_10.3709_pilon:152516 A T
+    # we want the 2nd contig name
+    next unless m/ (\S+?):\d+(-\d+)? /;
+    $diff->{$1}++;
+    $total++;
+  }
+  msg("Repaired", scalar(keys %$diff), "contigs in $asm at $total positions.");
+  return $diff;
+}
 
 #----------------------------------------------------------------------
 sub read_stats {
