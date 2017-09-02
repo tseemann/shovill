@@ -14,7 +14,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.6.0";
+my $VERSION = "0.6.1-dev";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -354,6 +354,7 @@ sub read_fasta {
   my($fname) = @_;
   my $seq;
   my $id;
+  # Bioperl is too heavyweight - that's my excuse for this
   open my $FASTA, '<', $fname or err("Could not open $fname");
   while (my $line = <$FASTA>) {
     chomp $line;
@@ -386,7 +387,7 @@ sub setOptions {
   use Getopt::Long;
 
   @Options = (
-    {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
+    {OPT=>"help",    VAR=>\&usage, DESC=>"This help"},
     {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Debug info"},
     {OPT=>"version!",  VAR=>\&version, DESC=>"Print version and exit"},
     {OPT=>"cpus=i",  VAR=>\$cpus, DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
@@ -408,7 +409,7 @@ sub setOptions {
     {OPT=>"keepfiles!",  VAR=>\$keepfiles, DEFAULT=>0, DESC=>"Keep intermediate files"},
   );
 
-  (!@ARGV) && (usage());
+  ! @ARGV && usage(1);
 
   &GetOptions(map {$_->{OPT}, $_->{VAR}} @Options) || usage();
 
@@ -422,6 +423,12 @@ sub setOptions {
 
 #----------------------------------------------------------------------
 sub usage {
+  my($exitcode) = @_;
+  $exitcode = 0 if $exitcode eq 'help'; # what gets passed by getopt func ref
+  $exitcode ||= 0;
+
+  select STDERR if $exitcode; # write to STDERR if exitcode is error
+  
   print "Synopsis:\n  Faster de novo assembly pipeline based around Spades\n";
   print "Usage:\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
   print "Author:\n  $AUTHOR\n";
@@ -440,7 +447,8 @@ sub usage {
     printf "  --%-13s %s%s\n", $_->{OPT}, $_->{DESC}, $def;
   }
   print "Documentation:\n  $URL\n";
-  exit(1);
+
+  exit($exitcode);
 }
  
 #----------------------------------------------------------------------
