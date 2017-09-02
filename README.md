@@ -14,12 +14,14 @@ the primary assembly step to get near-identical results in far less time.
 ## Main steps
 
 1. Estimate genome size and read length from reads (unless `--gsize` provided)
-2. Trim adapters from reads (with `--trim` only)
-3. Correct reads conservatively
-4. Pre-overlap paired-end reads
-5. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
-6. Use contigs not scaffolds
-7. Correct minor assembly errors
+2. Reduce FASTQ files to a sensible depth (default `--depth 50`)
+3. Trim adapters from reads (with `--trim` only)
+4. Conservatively correct reads sequencing errors
+5. Pre-overlap paired-end reads
+6. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
+7. Use contigs not scaffolds
+8. Correct minor assembly errors
+9. Produce final FASTA with nicer names
 
 ## Quick Start
 
@@ -39,7 +41,7 @@ Done.
 
 % head -n 4 mrsa/contigs.fa
 
->contig00001 NODE_1_length_54882_cov_28.4218_pilon
+>contig00001 len=52653 cov=32.7 corr=1 spades=NODE_1_length_52642_cov_32.67243_pilon
 ATAACGCCCTGCTGGCCCAGGTCATTTTATCCAATCTGGACCTCTCGGCTCGCTTTGAAGAAT
 GAGCGAATTCGCCGTTCAGTCCGCTGGACTTCGGACTTAAAGCCGCCTAAAACTGCACGAACC
 ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
@@ -72,6 +74,7 @@ You will need to install all the dependencies manually:
 * PILON
 * KMC
 * seqtk
+* pigz
 * Java
 * Trimmomatic
 
@@ -133,6 +136,7 @@ pilon.changes
   --force         Force overwite of existing output folder (default: OFF)
   --R1 XXX        Read 1 FASTQ (default: '')
   --R2 XXX        Read 2 FASTQ (default: '')
+  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 50)
   --gsize XXX     Estimated genome size <blank=AUTODETECT> (default: '')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
   --opts XXX      Extra SPAdes options eg. --plasmid --sc ... (default: '')
