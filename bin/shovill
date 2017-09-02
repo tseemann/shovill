@@ -28,7 +28,7 @@ my @LOG= ();      # global log file, saved at end
 
 # Options
 my(@Options, $debug, $version, 
-             $outdir, $force, $cpus, $tmpdir, $keepfiles,
+             $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $R1, $R2, $opts, $ram,
              $nocorr, $trim, $trimopt, $asm, $minlen, $mincov);
 setOptions();
@@ -57,6 +57,8 @@ $ram >= 4 or err("$EXE will not work with less than 4 GB RAM");
 my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
+$namefmt or err("Please provide a --namefmt for contig IDs");
+$namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder");
 
 # Check we have the required binaries
 for my $exe (qw(seqtk kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee)) {
@@ -205,8 +207,8 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
     $nbases += $len;
     $cov = sprintf "%.1f", $cov;
     my $corr = $changes->{$id} || 0;
-    my $desc = "len=$len cov=$cov corr=$corr spades=$id";
-    my $newid = sprintf "contig%05d %s", $ncontigs, $desc;
+    # $id =~ s/_pilon$// unless $nocorr;
+    my $newid = sprintf "$namefmt len=$len cov=$cov corr=$corr spades=$id", $ncontigs;
     $seq->{$newid} = $seq->{$id};
     delete $seq->{$id};
   }
@@ -417,6 +419,7 @@ sub setOptions {
     {OPT=>"version!",  VAR=>\&version, DESC=>"Print version and exit"},
     {OPT=>"cpus=i",  VAR=>\$cpus, DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
     {OPT=>"outdir=s",  VAR=>\$outdir, DEFAULT=>'', DESC=>"Output folder"},
+    {OPT=>"namefmt=s",  VAR=>\$namefmt, DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"force!",  VAR=>\$force, DEFAULT=>0, DESC=>"Force overwite of existing output folder"},
     {OPT=>"R1=s",  VAR=>\$R1, DEFAULT=>'', DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
