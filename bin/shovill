@@ -402,7 +402,10 @@ sub write_fasta {
   my($fname, $seq) = @_;
   open my $FASTA, '>', $fname or err("Could not write to $fname");
   for my $id (sort { $a cmp $b } keys %{$seq}) {
-    print $FASTA ">$id\n", $seq->{$id}, "\n";
+    print $FASTA ">$id\n";
+    # break contig in 60 characters per line
+    my @line = ($seq->{$id} =~ m/(.{1,60})/gs);
+    print $FASTA (map { $_."\n" } @line);
   }
   close $FASTA;
 }
