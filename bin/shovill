@@ -25,6 +25,7 @@ my $MIN_K = 31;   # sensible minimum, although prefer higher
 my $MAX_K = 127;  # spades max
 my $MINBQ = 3;    # for trimming and stats
 my @LOG= ();      # global log file, saved at end
+my @CMDLINE = ($0, @ARGV); # save this for printing to log later
 
 # Options
 my(@Options, $debug, $version, 
@@ -34,8 +35,8 @@ my(@Options, $debug, $version,
 setOptions();
 
 # Say hello
-msg("You ran: $0 @ARGV");
 msg("Hello", $ENV{USER} || 'stranger');
+msg("You ran: @CMDLINE");
 msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Homepage is $URL");
