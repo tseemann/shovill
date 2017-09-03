@@ -14,7 +14,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.7.0";
+my $VERSION = "0.7.1";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -441,7 +441,7 @@ sub setOptions {
     {OPT=>"force!",  VAR=>\$force, DEFAULT=>0, DESC=>"Force overwite of existing output folder"},
     {OPT=>"R1=s",  VAR=>\$R1, DEFAULT=>'', DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",  VAR=>\$R2, DEFAULT=>'', DESC=>"Read 2 FASTQ"},
-    {OPT=>"depth=i",  VAR=>\$depth, DEFAULT=>50, DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
+    {OPT=>"depth=i",  VAR=>\$depth, DEFAULT=>100, DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
     {OPT=>"gsize=s",  VAR=>\$gsize, DEFAULT=>'', DESC=>"Estimated genome size <blank=AUTODETECT>"},
     {OPT=>"kmers=s",  VAR=>\$kmers, DEFAULT=>'', DESC=>"K-mers to use <blank=AUTO>"},
     {OPT=>"opts=s",  VAR=>\$opts, DEFAULT=>'', DESC=>"Extra SPAdes options eg. --plasmid --sc ..."},
