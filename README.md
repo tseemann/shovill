@@ -71,12 +71,11 @@ You will need to install all the dependencies manually:
 * FLASH
 * SAMtools >= 1.3
 * BWA MEM
-* PILON
-* KMC
+* KMC >= 2
 * seqtk
 * pigz
-* Java
-* Trimmomatic
+* Pilon (Java)
+* Trimmomatic (Java)
 
 ## Output files
 
@@ -89,10 +88,15 @@ The FASTA description of each sequence in `contigs.fa` have space-separated
 `name=value` pairs with the length in bases (`len`), the average coverage
 (`cov`), the number of post-assembly SNP/indel corrections made (`corr`),
 and the original contig name from Spades (`spades`). Two examples are:
-
 ```
 >contig00001 len=263154 cov=8.9 corr=1 spades=NODE_1_length_263154_cov_8.86703_pilon
 >contig00041 len=339 cov=8.8 corr=0 spades=NODE_41_length_339_cov_8.77027_pilon
+```
+
+The (uncorrected) assembly graph file for viewing in 
+[Bandage](https://rrwick.github.io/Bandage/) is available too:
+```
+contigs.gfa
 ```
 
 There is a log file for each of the tools used to generate the assembly:
@@ -112,8 +116,6 @@ As Spades is the most important tool used, some useful output files are
 kept.<br>
 &#9888; Do not confuse the final `contigs.fa` with these files!
 ```
-assembly_graph.fastg
-assembly_graph.gfa
 before_rr.fasta
 contigs.fasta
 scaffolds.fasta
@@ -136,7 +138,7 @@ pilon.changes
   --force         Force overwite of existing output folder (default: OFF)
   --R1 XXX        Read 1 FASTQ (default: '')
   --R2 XXX        Read 2 FASTQ (default: '')
-  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 50)
+  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 100)
   --gsize XXX     Estimated genome size <blank=AUTODETECT> (default: '')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
   --opts XXX      Extra SPAdes options eg. --plasmid --sc ... (default: '')
@@ -166,5 +168,4 @@ Not published yet.
 ## Authors
 
 * **Torsten Seemann**
-* Jason Kwong
-* Anders Goncalves da Silva
+* Jason Kwong, Simon Gladman, Anders Goncalves da Silva

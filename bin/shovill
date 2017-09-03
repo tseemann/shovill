@@ -229,6 +229,8 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
 }
 write_fasta("contigs.fa", $seq);
 
+move("assembly_graph.gfa", "contigs.gfa");
+
 msg("Writing $EXE log file.");
 move("spades.log", "60-spades.log");
 
@@ -236,6 +238,8 @@ move("spades.log", "60-spades.log");
 unless ($keepfiles) {
   # corrected, overlapped and symlinked original reads
   unlink glob("*q.gz");
+  # keep the .gfa and delete the .fastg
+  unlink "assembly_graph.fastg";
   # BWA indices
   unlink glob("$asm.fasta.*");
   unlink $BAM, "$BAM.bai";
@@ -259,7 +263,8 @@ msg("Walltime used: $pretty");
 #msg("Type '$EXE --citation' for more details.");
 
 msg("Results in: $outdir");
-msg("Final assembly in: $outdir/contigs.fa");
+msg("Final assembly graph: $outdir/contigs.gfa");
+msg("Final assembly contigs: $outdir/contigs.fa");
 msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp."); 
 
 # Inspiration
