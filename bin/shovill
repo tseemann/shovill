@@ -93,7 +93,7 @@ unless ($gsize) {
   msg("Estimating genome size with 'kmc'");
   # FIXME: want to choose a dynamic kmer cutoff for high cov samples
   my $minkc = 3;  # max(3, int($depth/100));
-  run_cmd("kmc -m$ram_int -sm -cs65535 -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
+  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
   my($ucount) = grep { m/unique\s+counted/ } read_file('20-kmc.log');
   $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
   $gsize = $1;
