@@ -12,7 +12,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.8.0-dev";
+my $VERSION = "0.8.0";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
