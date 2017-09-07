@@ -19,8 +19,9 @@ my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
-my $ADAPTERS = "$FindBin::RealBin/../db/trimmomatic.fa";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
+
+my $ADAPTERS = "$FindBin::RealBin/../db/trimmomatic.fa"; # hard-code this for Conda etc.
 
 my $MIN_K = 31;               # sensible minimum, although prefer higher
 my $MAX_K = 127;              # spades max
