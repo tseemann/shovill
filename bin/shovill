@@ -253,7 +253,14 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
 }
 write_fasta("contigs.fa", $seq);
 
-move("assembly_graph.gfa", "contigs.gfa");
+# Spades changed output names when 3.11 came out
+for my $gfa ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa') {
+  if (-r $gfa) {
+    msg("Using '$gfa' as 'contigs.gfa'");
+    move($gfa, "contigs.gfa");
+    last;
+  }
+}
 
 msg("Writing $EXE log file.");
 move("spades.log", "60-spades.log");
@@ -263,7 +270,7 @@ unless ($keepfiles) {
   # corrected, overlapped and symlinked original reads
   unlink glob("*q.gz");
   # keep the .gfa and delete the .fastg
-  unlink "assembly_graph.fastg";
+  unlink glob("*.fastg");
   # BWA indices
   unlink glob("$asm.fasta.*");
   unlink $BAM, "$BAM.bai";
@@ -298,7 +305,7 @@ my @motd = (
   "Wishing you a life free of misassemblies.",
   "Remember, genomic repeats > ~800bp will be collapsed into single contigs.",
   "Remember, an assembly is just a _hypothesis_ of the original sequence!",
-  "Use Bandage to inspect the .gfa/.fastg assembly graph: https://rrwick.github.io/Bandage/",
+  "Use Bandage to inspect the .gfa assembly graph: https://rrwick.github.io/Bandage/",
   "Found a bug in $EXE? Post it at $URL/issues",
   "Have a suggestion for $EXE? Tell me at $URL/issues",
   "The $EXE manual is at $URL/blob/master/README.md",
@@ -559,4 +566,3 @@ sub usage {
 }
  
 #----------------------------------------------------------------------
-
