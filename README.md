@@ -55,6 +55,7 @@ ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
 brew tap homebrew/science
 brew tap tseemann/bioinformatics-linux
 brew install shovill
+shovill --check
 ```
 Using Homebrew will install all the dependencies for you: 
 [Linux](http://linuxbrew.sh) or [MacOS](http://brew.sh)
@@ -68,7 +69,8 @@ Use the
 
 ```
 git clone https://github.com/tseemann/shovill.git
-./shovill/shovill -h
+./shovill/shovill --help
+./shovill/shovill --check
 ```
 You will need to install all the dependencies manually:
 * SPAdes
@@ -136,8 +138,9 @@ pilon.changes
 
 ```
   --help          This help
-  --debug         Debug info (default: OFF)
   --version       Print version and exit
+  --check         Check dependencies are installed
+  --debug         Debug info (default: OFF)
   --cpus N        Number of CPUs to use (default: 16)
   --outdir XXX    Output folder (default: '')
   --force         Force overwite of existing output folder (default: OFF)
