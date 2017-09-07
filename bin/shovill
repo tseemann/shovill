@@ -53,7 +53,7 @@ sub is_integer { return $_[0] =~ m/^(\d+)$/ if defined $_[0]; }
 $gsize = $gsize ? guess_bp($gsize) : 0;
 is_integer($cpus) or err("Invalid --cpus $cpus");
 is_integer($minlen) or err("Invalid --minlen $minlen");
-is_integer($mincov) or err("Invalid --mincov $mincov");
+(defined $mincov && $mincov >= 0) or err("Please provide a non-negative value for --mincov");
 is_integer($ram) or err("Invalid --ram $ram");
 $ram >= 4 or err("$EXE will not work with less than 4 GB RAM");
 my $half_ram = int($ram / 2);
