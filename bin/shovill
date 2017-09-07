@@ -66,13 +66,8 @@ $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALI
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 
-# Check we have the required binaries
-my @exe = qw(seqtk pigz kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee);
-push @exe, ($^O eq 'linux' ? 'vmstat' : 'sysctl');
-for my $exe (@exe) {
-  my $fullexe = find_exe($exe);
-  $fullexe ? msg("Using $exe - $fullexe") : err("Could not find '$exe' - please install it.");
-}
+# Check deps
+check_deps();
 
 # Hardware stats
 my $CORES = num_cpus();
@@ -308,6 +303,19 @@ chdir($cwd);
 exit(0);
 
 #----------------------------------------------------------------------
+sub check_deps {
+  my($exit) = @_;
+  # Check we have the required binaries
+  my @exe = qw(seqtk pigz kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee);
+  push @exe, ($^O eq 'linux' ? 'vmstat' : 'sysctl');
+  for my $exe (@exe) {
+    my $fullexe = find_exe($exe);
+    $fullexe ? msg("Using $exe - $fullexe") : err("Could not find '$exe' - please install it.");
+  }
+  exit(0) if $exit;
+}
+
+#----------------------------------------------------------------------
 sub count_changes {
   my($fname) = @_;
   my @diffs = read_file($fname);
@@ -473,6 +481,7 @@ sub setOptions {
   @Options = (
     {OPT=>"help",       VAR=>\&usage,                    DESC=>"This help"},
     {OPT=>"version!",   VAR=>\&version,                  DESC=>"Print version and exit"},
+    {OPT=>"check!",     VAR=>\&check_deps,               DESC=>"Check dependencies are installed"},
     {OPT=>"debug!",     VAR=>\$debug,     DEFAULT=>0,    DESC=>"Debug info"},
     {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
