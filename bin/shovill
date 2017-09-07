@@ -59,6 +59,7 @@ $cpus > 0 or err("Invalid --cpus $cpus");
 $minlen >= 0 or err("Invalid --minlen $minlen");
 (defined $mincov && $mincov >= 0) or err("Please provide a non-negative value for --mincov");
 $ram >= $MIN_RAM_GB or err("Invalid --ram $ram - need at least $MIN_RAM_GB");
+my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
@@ -91,7 +92,7 @@ unless ($gsize) {
   msg("Estimating genome size with 'kmc'");
   # FIXME: want to choose a dynamic kmer cutoff for high cov samples
   my $minkc = 3;  # max(3, int($depth/100));
-  run_cmd("kmc -m$ram -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
+  run_cmd("kmc -m$ram_int -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
   my($ucount) = grep { m/unique\s+counted/ } read_file('20-kmc.log');
   $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
   $gsize = $1;
@@ -175,7 +176,7 @@ run_cmd("flash -m $MIN_FLASH_OVERLAP -M $max_overlap -d . -o flash -z -t $cpus R
 msg("Assembling reads with SPAdes");
 run_cmd(
   "spades.py -1 flash.notCombined_1.fastq.gz -2 flash.notCombined_2.fastq.gz -s flash.extendedFrags.fastq.gz"
- ." --only-assembler --threads $cpus --memory $ram -o . --tmp-dir $tmpdir -k $kmers $opts",
+ ." --only-assembler --threads $cpus --memory $ram_int -o . --tmp-dir $tmpdir -k $kmers $opts",
  "/dev/null",  # spades makes its own log file
 );
 
@@ -465,7 +466,7 @@ sub setOptions {
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",      VAR=>\$asm,       DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
-    {OPT=>"ram=i",      VAR=>\$ram,       DEFAULT=>4,    DESC=>"Try to keep RAM usage below this many GB"},
+    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>4.0,  DESC=>"Try to keep RAM usage below this many GB"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
   );
 
