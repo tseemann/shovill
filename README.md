@@ -59,6 +59,11 @@ brew install shovill
 Using Homebrew will install all the dependencies for you: 
 [Linux](http://linuxbrew.sh) or [MacOS](http://brew.sh)
 
+### Docker
+
+Use the 
+[Bioboxes Shovill container](https://github.com/bioboxes/shovill/blob/master/Dockerfile).
+
 ### Source
 
 ```
