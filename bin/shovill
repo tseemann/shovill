@@ -8,8 +8,6 @@ use File::Copy;
 use List::Util qw(min max);
 use Cwd;
 use File::Basename;
-use Time::Piece;
-use Time::Seconds;
 use FindBin;
 
 # Globals
@@ -30,8 +28,9 @@ my $MINBQ = 3;                # for trimming and stats
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 1;           # for all tools
 
-my @LOG= ();      # global log file, saved at end
-my @CMDLINE = ($0, @ARGV); # save this for printing to log later
+my @LOG= ();                  # global log file, saved at end
+my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
+my $t0 = time;                # basetime to measure running duration
 
 # Options
 my(@Options, $debug, $version, 
@@ -47,8 +46,6 @@ msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Homepage is $URL");
 msg("Operating system is $OPSYS");
-my $starttime = localtime;
-msg("Local time is $starttime");
 
 # Check options
 -r $R1 or err("Can't read --R1 $R1");
@@ -138,8 +135,8 @@ else {
 my $RLEN = $stat->{'avg_len'};
 msg("Average read length looks like $RLEN bp");
 unless ($minlen) {
-  msg("Setting --minlen to $RLEN");
-  $minlen = $RLEN
+  $minlen = int( $RLEN / 2);
+  msg("Setting --minlen to $minlen");
 }
 
 # Choosing some kmers
@@ -285,12 +282,12 @@ unless ($keepfiles) {
 }
 
 # Say our goodbyes
-my $endtime = localtime;
-my $walltime = $endtime - $starttime;
-my $pretty = sprintf "%.2f minutes", $walltime->minutes;
-msg("Walltime used: $pretty");
-#msg("If you use this result please cite the Shovill paper:");
-#msg("Seemann T (2017) Shovill: rapid prokaryotic genome assembly. BioRxiv doi:XXXX-YYYY");
+my $wallsecs = time - $t0;
+my($mins,$secs) = ( int($wallsecs/60), $wallsecs % 60 );
+msg("Walltime used: $mins min $secs sec");
+
+#msg("If you use this result please cite the Shovill:");
+#msg("Seemann T (2017) Shovill: rapid prokaryotic genome assembly. GitHub $URL");
 #msg("Type '$EXE --citation' for more details.");
 
 msg("Results in: $outdir");
@@ -312,7 +309,7 @@ my @motd = (
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
   "The name '$EXE' is pronounced as 'shovel' in English",
 );
-srand( $$ + $walltime + $MAX_K ); # seed
+srand( $$ + $t0 + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
 msg("Done.");
 
@@ -515,7 +512,7 @@ sub setOptions {
     {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
     {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Use Trimmomatic to remove common adaptors first"},
     {OPT=>"trimopt=s",  VAR=>\$trimopt,   DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
-    {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>0,    DESC=>"Minimum contig length <0=AUTO>"},
+    {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>1,    DESC=>"Minimum contig length <0=AUTO>"},
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",      VAR=>\$asm,       DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
