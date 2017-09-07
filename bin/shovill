@@ -181,6 +181,8 @@ run_cmd(
 );
 
 # Correct contigs with Pilon
+my $changes = {};
+
 unless ($nocorr) {
   my $logfile = "70-bwa.log";
   my $target = "$asm.fasta";
@@ -198,14 +200,12 @@ unless ($nocorr) {
     "80-pilon.log");
   move($target, "$target.uncorrected");
   move("pilon.fasta", $target);
+  # Count changes per contig - return a hashref
+  $changes = count_changes("pilon.changes");
 }
 else {
   msg("User supplied --nocorr, so not correcting contigs.");
 }
-
-# Count changes per contig - return a hashref
-my $changes = count_changes("pilon.changes");
-#msg(Dumper($changes)); exit;
 
 # Write final answer with nicer names
 my $ncontigs = 0;
