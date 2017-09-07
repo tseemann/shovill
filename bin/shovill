@@ -14,17 +14,21 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.7.2-dev";
+my $VERSION = "0.8.0-dev";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
 my $ADAPTERS = "$FindBin::RealBin/../db/trimmomatic.fa";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
-my $MIN_FLASH_OVERLAP = 40;
-my $MIN_K = 31;   # sensible minimum, although prefer higher
-my $MAX_K = 127;  # spades max
-my $MINBQ = 3;    # for trimming and stats
+
+my $MIN_K = 31;               # sensible minimum, although prefer higher
+my $MAX_K = 127;              # spades max
+my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
+my $MINBQ = 3;                # for trimming and stats
+my $MIN_FLASH_OVERLAP = 20;   # for stitching
+my $MIN_RAM_GB = 1;           # for all tools
+
 my @LOG= ();      # global log file, saved at end
 my @CMDLINE = ($0, @ARGV); # save this for printing to log later
 
@@ -51,16 +55,15 @@ msg("Local time is $starttime");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
 sub is_integer { return $_[0] =~ m/^(\d+)$/ if defined $_[0]; }
 $gsize = $gsize ? guess_bp($gsize) : 0;
-is_integer($cpus) or err("Invalid --cpus $cpus");
-is_integer($minlen) or err("Invalid --minlen $minlen");
+$cpus > 0 or err("Invalid --cpus $cpus");
+$minlen >= 0 or err("Invalid --minlen $minlen");
 (defined $mincov && $mincov >= 0) or err("Please provide a non-negative value for --mincov");
-is_integer($ram) or err("Invalid --ram $ram");
-$ram >= 4 or err("$EXE will not work with less than 4 GB RAM");
+$ram >= $MIN_RAM_GB or err("Invalid --ram $ram - need at least $MIN_RAM_GB");
 my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
 $namefmt or err("Please provide a --namefmt for contig IDs");
-$namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder");
+$namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 
 # Check we have the required binaries
 for my $exe (qw(seqtk pigz kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee)) {
@@ -129,7 +132,7 @@ else {
 # Calculating read length distribution
 my $RLEN = $stat->{'avg_len'};
 msg("Average read length looks like $RLEN bp");
-$MAX_K = min( $MAX_K, int(0.8 * $RLEN) );  # FIXME: make 0.8 based on fqchk QUAL?
+$MAX_K = min( $MAX_K, int($KMER_READ_FRAC * $RLEN) );
 msg("Setting maximum k-mer to $MAX_K");
 unless ($minlen) {
   msg("Setting --minlen to $RLEN");
@@ -462,7 +465,7 @@ sub setOptions {
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",      VAR=>\$asm,       DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
-    {OPT=>"ram=i",      VAR=>\$ram,       DEFAULT=>32,   DESC=>"Try to keep RAM usage below this many GB"},
+    {OPT=>"ram=i",      VAR=>\$ram,       DEFAULT=>4,    DESC=>"Try to keep RAM usage below this many GB"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
   );
 
