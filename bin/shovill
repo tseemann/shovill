@@ -14,13 +14,14 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.7.1";
+my $VERSION = "0.7.2-dev";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
 my $ADAPTERS = "$FindBin::RealBin/../db/trimmomatic.fa";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
+my $MIN_FLASH_OVERLAP = 40;
 my $MIN_K = 31;   # sensible minimum, although prefer higher
 my $MAX_K = 127;  # spades max
 my $MINBQ = 3;    # for trimming and stats
@@ -159,7 +160,11 @@ run_cmd(
 
 # Overlap corrected reads
 msg("Overlapping reads with 'FLASH'");
-run_cmd("flash -d . -o flash -z -M 300 -t $cpus R1.cor.fq.gz R2.cor.fq.gz", 
+# WARNING: An unexpectedly high proportion of combined pairs (13.03%)
+# overlapped by more than 80 bp, the --max-overlap (-M) parameter.
+#my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
+my $max_overlap = $stat->{'max_len'};
+run_cmd("flash -m $MIN_FLASH_OVERLAP -M $max_overlap -d . -o flash -z -t $cpus R1.cor.fq.gz R2.cor.fq.gz",
   "50-flash.log"
 );
 
