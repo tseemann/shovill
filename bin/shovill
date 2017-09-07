@@ -136,26 +136,37 @@ else {
 # Calculating read length distribution
 my $RLEN = $stat->{'avg_len'};
 msg("Average read length looks like $RLEN bp");
-$MAX_K = min( $MAX_K, int($KMER_READ_FRAC * $RLEN) );
-msg("Setting maximum k-mer to $MAX_K");
 unless ($minlen) {
   msg("Setting --minlen to $RLEN");
   $minlen = $RLEN
 }
 
 # Choosing some kmers
-unless ($kmers) {
-  $MIN_K = 21 if $stat->{'avg_len'} < 75;
+my @kmers = ();
+if ($kmers) {
+  # extract user kmers
+  msg("Examing provided --kmers $kmers");
+  @kmers = split m/\s*\D+\s*/, $kmers;
+  my $arl = $stat->{'avg_len'};
+  for my $k (@kmers) {
+    $k <= $MAX_K or err("k-mer $k to bigger than maximum allowed $MAX_K");
+    $k >= $MIN_K or err("k-mer $k to smaller than minimum recommended $MIN_K");
+    $k < $arl or err("k-mer $k is greater than average read length $arl");
+  }
+}
+else {
+  $MAX_K = min( $MAX_K, int($KMER_READ_FRAC * $RLEN) );
+  $MIN_K = 21 if $stat->{'avg_len'} < 75;   # hard-coded choice here....
+  msg("Setting k-mer range to ($MIN_K .. $MAX_K)");
   my $kn = 5; # max(4, $cpus);
   my $ks = max(5, int( ($MAX_K - $MIN_K) / ($kn-1) ) );
   $ks++ if $ks % 2 == 1; # need even step to ensure odd values only
-  my @kmers;
   for (my $k=$MIN_K; $k <= $MAX_K; $k+=$ks) {
     push @kmers, $k;
   }
   msg("Estimated K-mers: @kmers [kn=$kn, ks=$ks, kmin=$MIN_K, kmax=$MAX_K]");
-  $kmers = join(',', @kmers);
 }
+$kmers = join(',', @kmers);
 msg("Using kmers: $kmers");
 
 # Correct reads
