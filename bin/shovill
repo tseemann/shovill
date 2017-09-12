@@ -12,7 +12,7 @@ use FindBin;
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.8.0";
+my $VERSION = "0.9.0-dev";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -185,9 +185,10 @@ run_cmd("flash -m $MIN_FLASH_OVERLAP -M $max_overlap -d . -o flash -z -t $cpus R
 );
 
 # Running Spades
+# https://twitter.com/spadesassembler/status/907714056387252225
 msg("Assembling reads with SPAdes");
 run_cmd(
-  "spades.py -1 flash.notCombined_1.fastq.gz -2 flash.notCombined_2.fastq.gz -s flash.extendedFrags.fastq.gz"
+  "spades.py --pe1-1 flash.notCombined_1.fastq.gz --pe1-2 flash.notCombined_2.fastq.gz --s2 flash.extendedFrags.fastq.gz"
  ." --only-assembler --threads $cpus --memory $ram_int -o . --tmp-dir $tmpdir -k $kmers $opts",
  "/dev/null",  # spades makes its own log file
 );
@@ -201,6 +202,7 @@ unless ($nocorr) {
   -r $target or err("Can not see '$target' file to correct!");
   msg("Checking for assembly errors in $target");
   run_cmd("bwa index $target", $logfile);
+  # use original reads here, to help fix any errors from overlapping PE stitching
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz"
          ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$$ -o $BAM)", 
          $logfile);
