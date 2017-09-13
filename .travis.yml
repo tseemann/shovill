@@ -12,7 +12,7 @@ cache:
 install:
     - "cpanm --notest File::Slurp"
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
-    - "if [ ! -d deps ]; then do mkdir -p deps && cd deps && source install_deps.sh && cd .. ; fi"
+    - "if [ ! -d deps ]; then mkdir -p deps && cd deps && source install_deps.sh && cd .. ; fi"
     - "pwd"
     - "echo $HOME"
 
