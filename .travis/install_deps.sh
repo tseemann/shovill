@@ -1,5 +1,5 @@
 
-HERE=$PWD
+HERE="$PWD"
 WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
@@ -57,6 +57,9 @@ unzip $TRIM
 echo "exec java ar $PWD/Trimmomatic-0.36/trimmomatic-0.36.jar" '"$@"' > $TRIMSH
 chmod +x $TRIMSH
 
-echo $PATH
+echo "Deleting source files"
+rm -vf "$HERE/*.tar.*"
+rm -vf "$HERE/*/*.{c,h,cpp,hpp,o}"
 
+echo $PATH
 export PATH
