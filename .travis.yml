@@ -5,15 +5,21 @@ sudo: false
 perl:
     - "5.14"
 
+cache:
+    directories:
+        - deps
+
 install:
     - "cpanm --notest File::Slurp"
-    - "source .travis/install_deps.sh" 
-    - "export PATH=$PWD/bin:$PATH"
-    - "echo $PATH"
+    - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
+    - "mkdir -p deps && cd deps && source install_deps.sh"
     - "pwd"
 
 script:
-    - "shovill --help"
     - "shovill --version"
+    - "shovill --check"
+    - "shovill --help"
     - "! shovill --doesnotexist"
-    - "shovill --outdir asm --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 4"
+    - "shovill --outdir asm1 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2"
+    - "shovill --outdir asm2 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2 --nocorr"
+    - "shovill --outdir asm2 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2 --trim"
