@@ -6,6 +6,7 @@ perl:
     - "5.14"
 
 install:
+    - "cpanm --notest File::Slurp"
     - "source .travis/install_deps.sh" 
     - "export PATH=$PWD/bin:$PATH"
     - "echo $PATH"
