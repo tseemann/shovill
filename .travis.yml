@@ -7,7 +7,7 @@ perl:
 
 install:
     - "source .travis/install_deps.sh" 
-    - "export PATH=.:$PATH"
+    - "export PATH=$PWD/bin:$PATH"
     - "echo $PATH"
     - "pwd"
 
