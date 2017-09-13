@@ -15,6 +15,16 @@ install:
     - "if [ ! -d deps ]; then mkdir -p deps && cd deps && source install_deps.sh && cd .. ; fi"
     - "pwd"
     - "echo $HOME"
+    - "echo $PATH"
+    - "find deps"
+    - "which seqtk"
+    - "which bwa"
+    - "which samtools"
+    - "which pilon"
+    - "which trimmomatic"
+    - "which spades.py"
+    - "which lighter"
+    - "which flash"
 
 script:
     - "shovill --version"
