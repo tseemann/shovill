@@ -16,4 +16,4 @@ script:
     - "shovill --help"
     - "shovill --version"
     - "! shovill --doesnotexist"
-    - "shovill --outdir asm --R1 test/test_R1.fq.gz --R2 test/test_R2.fq.gz --ram 4"
+    - "shovill --outdir asm --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 4"
