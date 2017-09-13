@@ -1,0 +1,14 @@
+language: perl
+
+sudo: false
+
+perl:
+    - "5.14"
+
+install:
+    - ".travis/install_deps.sh" 
+
+script:
+    - "shovill --help"
+    - "shovill --version"
+    - "! shovill --doesnotexist"
