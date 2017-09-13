@@ -5,6 +5,12 @@ sudo: false
 perl:
     - "5.14"
 
+addons:
+    apt:
+        packages:
+            - pigz
+            - unzip
+            
 #cache:
 #    directories:
 #        - deps
