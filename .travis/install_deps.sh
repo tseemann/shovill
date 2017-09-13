@@ -28,8 +28,8 @@ $WGET http://spades.bioinf.spbau.ru/release3.11.0/$SPADES.tar.gz
 $UNTAR $SPADES.tar.gz
 PATH=$HERE/$SPADES/bin:$PATH
 
-SAMTOOLS=samtools-1.4.1
-$WGET https://github.com/samtools/samtools/releases/download/1.4.1/$SAMTOOLS.tar.bz2
+SAMTOOLS=samtools-1.5
+$WGET https://github.com/samtools/samtools/releases/download/1.5/$SAMTOOLS.tar.bz2
 $UNTAR $SAMTOOLS.tar.bz2
 (cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
 PATH=$HERE/$SAMTOOLS/bin:$PATH
