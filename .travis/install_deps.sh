@@ -1,7 +1,7 @@
 
 HERE=$PWD
 WGET="wget --quiet"
-MAKE="$MAKE -j"
+MAKE="make --silent -j"
 UNTAR="tar xf"
 
 KMC=KMC3.linux.tar.gz
