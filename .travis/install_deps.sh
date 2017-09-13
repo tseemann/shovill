@@ -4,9 +4,17 @@ WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
+SEQTK=v1.2.tar.gz
+$WGET https://github.com/lh3/seqtk/archive/$SEQTK
+$UNTAR $SEQTK
+$MAKE -C seqtk-1.2
+chmod g-w seqtk-1.2/seqtk
+PATH=$HERE/seqtk-1.2:$PATH
+
 KMC=KMC3.linux.tar.gz
 $WGET https://github.com/refresh-bio/KMC/releases/download/v3.0.0/$KMC
 tar xvf $KMC
+rm -fv kmc_dump kmc_tools
 PATH=$HERE:$PATH
 
 JAR=pilon-1.22.jar
@@ -31,12 +39,6 @@ $WGET https://github.com/lh3/bwa/releases/download/v0.7.16/$BWA.tar.bz2
 $UNTAR $BWA.tar.bz2
 $MAKE -C $BWA 
 PATH=$HERE/$BWA:$PATH
-
-SEQTK=v1.2.tar.gz
-$WGET https://github.com/lh3/seqtk/archive/$SEQTK
-$UNTAR $SEQTK
-$MAKE -C seqtk-1.2 
-PATH=$HERE/seqtk-1.2:$PATH
 
 LIGHTER=v1.1.1.tar.gz
 $WGET https://github.com/mourisl/Lighter/archive/$LIGHTER

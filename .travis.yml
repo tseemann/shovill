@@ -5,18 +5,18 @@ sudo: false
 perl:
     - "5.14"
 
-cache:
-    directories:
-        - deps
+#cache:
+#    directories:
+#        - deps
 
 install:
     - "cpanm --notest File::Slurp"
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
-    - "if [ ! -d deps ]; then mkdir -p deps && cd deps && source install_deps.sh && cd .. ; fi"
+    - "mkdir -p deps && cd deps && source install_deps.sh && cd .."
     - "pwd"
     - "echo $HOME"
     - "echo $PATH"
-    - "find deps"
+    - "find deps -executable -type f"
     - "which seqtk"
     - "which bwa"
     - "which samtools"
