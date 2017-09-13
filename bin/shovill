@@ -121,7 +121,7 @@ else {
 if ($trim) {
   msg("Trimming reads");
   run_cmd(
-    "trimmomatic PE -threads $cpus -phred33".
+    "_JAVA_OPTIONS=-Xmx${ram}g trimmomatic PE -threads $cpus -phred33".
     " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $trimopt",
     "30-trimmomatic.log",
   );
