@@ -6,8 +6,10 @@ perl:
     - "5.14"
 
 install:
-    - ".travis/install_deps.sh" 
+    - "source .travis/install_deps.sh" 
     - "export PATH=.:$PATH"
+    - "echo $PATH"
+    - "pwd"
 
 script:
     - "shovill --help"
