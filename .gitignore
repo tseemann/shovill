@@ -18,4 +18,3 @@ nytprof.out
 *.o
 *.bs
 /_eumm/
-test/*.gz
