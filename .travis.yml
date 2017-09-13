@@ -11,10 +11,6 @@ addons:
             - pigz
             - unzip
             
-#cache:
-#    directories:
-#        - deps
-
 install:
     - "cpanm --notest File::Slurp"
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
@@ -23,20 +19,10 @@ install:
     - "echo $HOME"
     - "echo $PATH"
     - "find deps -executable -type f"
-    - "which seqtk"
-    - "which bwa"
-    - "which samtools"
-    - "which pilon"
-    - "which trimmomatic"
-    - "which spades.py"
-    - "which lighter"
-    - "which flash"
 
 script:
     - "shovill --version"
     - "shovill --check"
     - "shovill --help"
     - "! shovill --doesnotexist"
-    - "shovill --outdir asm1 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2"
-    - "shovill --outdir asm2 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2 --nocorr"
-    - "shovill --outdir asm2 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2 --trim"
+    - "shovill --outdir asm1 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 2 --cpus 2 --depth 25 --trim"
