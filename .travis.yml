@@ -25,4 +25,4 @@ script:
     - "shovill --check"
     - "shovill --help"
     - "! shovill --doesnotexist"
-    - "shovill --outdir asm1 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3.0 --cpus 2 --depth 25"
+    - "shovill --outdir asm1 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 3 --cpus 2 --depth 25 --nocorr"
