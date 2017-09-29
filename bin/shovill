@@ -231,7 +231,7 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
   $id =~ m/cov_(\d+(\.\d+)?)/ or err("Could not get coverage of contig: $id");
   my $cov = $1;
   if ($len{$id} < $minlen) {
-    msg("Removing short conting (< $minlen bp): $id");
+    msg("Removing short contig (< $minlen bp): $id");
     delete $seq->{$id};
   } 
   elsif ($cov < $mincov) {
