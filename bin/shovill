@@ -5,6 +5,7 @@ use File::Slurp;
 use File::Path qw(make_path remove_tree);
 use File::Spec;
 use File::Copy;
+use File::Temp;
 use List::Util qw(min max);
 use Cwd;
 use File::Basename;
@@ -33,7 +34,7 @@ my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
 
 # Options
-my(@Options, $debug, $version, 
+my(@Options, $debug, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $R1, $R2, $opts, $ram, $depth,
              $nocorr, $trim, $trimopt, $asm, $minlen, $mincov);
@@ -93,7 +94,9 @@ unless ($gsize) {
   msg("Estimating genome size with 'kmc'");
   # FIXME: want to choose a dynamic kmer cutoff for high cov samples
   my $minkc = 3;  # max(3, int($depth/100));
-  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $tmpdir", "20-kmc.log");
+  my $dir = File::Temp->newdir(DIR => $tmpdir);
+  my $dirname = $dir -> dirname;
+  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $dirname", "20-kmc.log");
   my($ucount) = grep { m/unique\s+counted/ } read_file('20-kmc.log');
   $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
   $gsize = $1;
@@ -204,7 +207,7 @@ unless ($nocorr) {
   run_cmd("bwa index $target", $logfile);
   # use original reads here, to help fix any errors from overlapping PE stitching
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz"
-         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$$ -o $BAM)", 
+         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$$ -o $BAM)",
          $logfile);
   run_cmd("samtools index $BAM", $logfile);
 
@@ -233,7 +236,7 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
   if ($len{$id} < $minlen) {
     msg("Removing short contig (< $minlen bp): $id");
     delete $seq->{$id};
-  } 
+  }
   elsif ($cov < $mincov) {
     msg("Removing low coverage contig (< $mincov x): $id");
     delete $seq->{$id};
@@ -295,7 +298,7 @@ msg("Walltime used: $mins min $secs sec");
 msg("Results in: $outdir");
 msg("Final assembly graph: $outdir/contigs.gfa");
 msg("Final assembly contigs: $outdir/contigs.fa");
-msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp."); 
+msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp.");
 
 # Inspiration
 my @motd = (
@@ -419,7 +422,7 @@ sub msg {
   print STDERR $msg;
   push @LOG, $msg;
 }
-      
+
 #----------------------------------------------------------------------
 sub err {
   msg(@_);
@@ -455,7 +458,7 @@ sub version {
   print "$EXE $VERSION\n";
   exit(0);
 }
-   
+
 #----------------------------------------------------------------------
 sub read_fasta {
   my($fname) = @_;
@@ -489,7 +492,7 @@ sub write_fasta {
   }
   close $FASTA;
 }
-   
+
 #----------------------------------------------------------------------
 # Option setting routines
 
@@ -541,7 +544,7 @@ sub usage {
   $exitcode ||= 0;
 
   select STDERR if $exitcode; # write to STDERR if exitcode is error
-  
+
   print "Synopsis:\n  Faster de novo assembly pipeline based around Spades\n";
   print "Usage:\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
   print "Author:\n  $AUTHOR\n";
@@ -563,5 +566,5 @@ sub usage {
 
   exit($exitcode);
 }
- 
+
 #----------------------------------------------------------------------
