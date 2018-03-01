@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 use strict;
-use Data::Dumper;
-use File::Slurp;
 use File::Path qw(make_path remove_tree);
 use File::Spec;
 use File::Copy;
@@ -97,7 +95,7 @@ unless ($gsize) {
   my $dir = File::Temp->newdir(DIR => $tmpdir);
   my $dirname = $dir -> dirname;
   run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $dirname", "20-kmc.log");
-  my($ucount) = grep { m/unique\s+counted/ } read_file('20-kmc.log');
+  my($ucount) = grep { m/unique\s+counted/ } read_lines('20-kmc.log');
   $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
   $gsize = $1;
 }
@@ -319,7 +317,7 @@ msg( $motd[ int(rand(scalar(@motd))) ] );
 msg("Done.");
 
 # Dump log and return to original folder
-write_file("00-$EXE.log", @LOG);
+write_lines("00-$EXE.log", @LOG);
 chdir($cwd);
 exit(0);
 
@@ -339,7 +337,7 @@ sub check_deps {
 #----------------------------------------------------------------------
 sub count_changes {
   my($fname) = @_;
-  my @diffs = read_file($fname);
+  my @diffs = read_lines($fname);
   my $diff = {};
   my $total=0;
   foreach (@diffs) {
@@ -360,7 +358,7 @@ sub read_stats {
   my $stat;
   # we use MINBQ to get an idea of what it would be after quality clipping
   run_cmd("seqtk fqchk -q$MINBQ \Q$R1\E > $outfile");
-  my @row = read_file($outfile);
+  my @row = read_lines($outfile);
 #  msg($row[0]);
   for my $tag ('min_len', 'max_len', 'avg_len') {
     $row[0] =~ m/$tag:\s*(\d+(\.\d+)?);/ or err("Can't parse $tag from: $row[0]");
@@ -491,6 +489,23 @@ sub write_fasta {
     print $FASTA (map { $_."\n" } @line);
   }
   close $FASTA;
+}
+
+#----------------------------------------------------------------------
+sub read_lines {
+  my($fname) = @_;
+  open my $FILE, '<', $fname or err("Could not open $fname");
+  my @lines = <$FILE>;
+  close $FILE;
+  return @lines
+}
+
+#----------------------------------------------------------------------
+sub write_lines {
+  my($fname, @lines) = @_;
+  open my $FILE, '>', $fname or err("Could not write to $fname");
+  print $FILE @lines;
+  close $FILE;
 }
 
 #----------------------------------------------------------------------
