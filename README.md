@@ -18,11 +18,11 @@ the primary assembly step to get near-identical results in far less time.
 1. Estimate genome size and read length from reads (unless `--gsize` provided)
 2. Reduce FASTQ files to a sensible depth (default `--depth 50`)
 3. Trim adapters from reads (with `--trim` only)
-4. Conservatively correct reads sequencing errors
-5. Pre-overlap paired-end reads
+4. Conservatively correct sequencing errors in reads
+5. Pre-overlap ("stitch") paired-end reads
 6. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
 7. Use contigs not scaffolds
-8. Correct minor assembly errors
+8. Correct minor assembly errors by mapping reads back to contigs
 9. Produce final FASTA with nicer names
 
 ## Quick Start
@@ -37,9 +37,9 @@ Done.
 
 % ls mrsa
 
-00-shovill.log  30-trimmomatic.log  60-spades.log  assembly_graph.fastg  contigs.fa     pilon.changes
-10-seqtk.tab    40-lighter.log      70-bwa.log     assembly_graph.gfa    contigs.fasta  scaffolds.fasta
-20-kmc.log      50-flash.log        80-pilon.log   before_rr.fasta       flash.hist
+00-shovill.log  30-trimmomatic.log  60-spades.log  contigs.fa   scaffolds.fasta
+10-seqtk.tab    40-lighter.log      70-bwa.log     contigs.gfa  contigs.fasta
+20-kmc.log      50-flash.log        80-pilon.log   flash.hist   before_rr.fasta
 
 % head -n 4 mrsa/contigs.fa
 
@@ -54,13 +54,19 @@ ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
 ### Homebrew
 
 ```
-brew tap homebrew/science
-brew tap tseemann/bioinformatics-linux
+brew tap brewsci/bio
+brew tap brewsci/science
 brew install shovill
 shovill --check
 ```
 Using Homebrew will install all the dependencies for you: 
 [Linux](http://linuxbrew.sh) or [MacOS](http://brew.sh)
+
+### Conda
+
+```
+conda -c bioconda install shovill
+```
 
 ### Docker
 
@@ -75,7 +81,7 @@ git clone https://github.com/tseemann/shovill.git
 ./shovill/shovill --check
 ```
 You will need to install all the dependencies manually:
-* SPAdes
+* SPAdes >= 3.11
 * Lighter
 * FLASH
 * SAMtools >= 1.3
@@ -158,7 +164,7 @@ pilon.changes
   --minlen N      Minimum contig length <0=AUTO> (default: 0)
   --mincov n.nn   Minimum contig coverage <0=AUTO> (default: 2)
   --asm XXX       Spades result to correct: before_rr contigs scaffolds (default: 'contigs')
-  --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
+  --tmpdir XXX    Fast temporary directory (default: '/tmp')
   --ram N         Try to keep RAM usage below this many GB (default: 32)
   --keepfiles     Keep intermediate files (default: OFF)
 ```
