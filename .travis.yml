@@ -12,7 +12,6 @@ addons:
             - unzip
             
 install:
-    - "cpanm --notest File::Slurp"
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
     - "mkdir -p deps && cd deps && source install_deps.sh && cd .."
     - "pwd"
