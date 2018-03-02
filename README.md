@@ -54,9 +54,7 @@ ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
 ### Homebrew
 
 ```
-brew tap brewsci/bio
-brew tap brewsci/science
-brew install shovill
+brew install brewsci/bio/shovill
 shovill --check
 ```
 Using Homebrew will install all the dependencies for you: 
