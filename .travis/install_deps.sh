@@ -20,7 +20,7 @@ PATH=$HERE:$PATH
 JAR=pilon-1.22.jar
 PILON=pilon
 $WGET https://github.com/broadinstitute/pilon/releases/download/v1.22/$JAR
-echo "exec java ar $PWD/$JAR" '"$@"' > $PILON
+echo "exec java -jar $PWD/$JAR" '"$@"' > $PILON
 chmod +x $PILON
 
 SPADES=SPAdes-3.11.0-Linux
