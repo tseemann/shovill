@@ -16,7 +16,7 @@ the primary assembly step to get near-identical results in far less time.
 ## Main steps
 
 1. Estimate genome size and read length from reads (unless `--gsize` provided)
-2. Reduce FASTQ files to a sensible depth (default `--depth 50`)
+2. Reduce FASTQ files to a sensible depth (default `--depth 100`)
 3. Trim adapters from reads (with `--trim` only)
 4. Conservatively correct sequencing errors in reads
 5. Pre-overlap ("stitch") paired-end reads
