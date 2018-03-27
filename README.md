@@ -75,8 +75,8 @@ Use the
 
 ```
 git clone https://github.com/tseemann/shovill.git
-./shovill/shovill --help
-./shovill/shovill --check
+./shovill/bin/shovill --help
+./shovill/bin/shovill --check
 ```
 You will need to install all the dependencies manually:
 * SPAdes >= 3.11
