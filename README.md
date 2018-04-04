@@ -23,7 +23,8 @@ the primary assembly step to get near-identical results in far less time.
 6. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
 7. Use contigs not scaffolds
 8. Correct minor assembly errors by mapping reads back to contigs
-9. Produce final FASTA with nicer names
+9. Remove contigs that are too short, too low coverage, or pure homopolymers
+10. Produce final FASTA with nicer names
 
 ## Quick Start
 

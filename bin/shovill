@@ -239,6 +239,10 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
     msg("Removing low coverage contig (< $mincov x): $id");
     delete $seq->{$id};
   }
+  elsif ($seq->{$id} =~  m/^(.)\1+$/) {
+    msg("Removing homopolymer-".$len{$id}."$1 contig: $id");
+    delete $seq->{$id};
+  }
   else {
     $ncontigs++;
     my $len = $len{$id};
