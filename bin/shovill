@@ -11,7 +11,7 @@ use Cwd qw(realpath getcwd);
 
 # Globals
 my $EXE = basename($0);
-my $VERSION = "0.9.1";
+my $VERSION = "0.9.2";
 my $URL = "https://github.com/tseemann/shovill";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
@@ -47,6 +47,7 @@ msg("Homepage is $URL");
 msg("Operating system is $OPSYS");
 
 # Check options
+$outdir or err("Please specify output folder with --outdir");
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
@@ -128,8 +129,8 @@ if ($trim) {
   );
 }
 else {
-  run_cmd("ln -s \Q$R1\E R1.fq.gz");
-  run_cmd("ln -s \Q$R2\E R2.fq.gz");
+  run_cmd("ln -sf \Q$R1\E R1.fq.gz");
+  run_cmd("ln -sf \Q$R2\E R2.fq.gz");
 }
 
 # Calculating read length distribution
@@ -376,16 +377,18 @@ sub read_stats {
 #----------------------------------------------------------------------
 sub make_folder {
   my($outdir) = @_;
+  $outdir or err("make_folder() provided undefined path");
   if (-d $outdir) {
     if ($force) {
-      msg("Forced removal of existing --outdir $outdir (please wait)");
-      remove_tree($outdir);
+      msg("Forced overwrite of existing --outdir $outdir");
     }
     else {
       err("Folder '$outdir' already exists. Try using --force");
     }
   }
-  make_path($outdir);
+  else {
+    make_path($outdir);
+  }
 }
 
 #----------------------------------------------------------------------
