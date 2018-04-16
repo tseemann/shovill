@@ -352,7 +352,7 @@ sub count_changes {
     $diff->{$1}++;
     $total++;
   }
-  msg("Repaired", scalar(keys %$diff), "contigs in $asm at $total positions.");
+  msg("Repaired", scalar(keys %$diff), "contigs from $asm.fasta at $total positions.");
   return $diff;
 }
 
