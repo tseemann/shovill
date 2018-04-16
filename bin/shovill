@@ -455,7 +455,7 @@ sub avail_ram_gb {
     $ram = $1 / 1024 / 1024 / 1024; # convert Bytes to GB
   }
   $ram && $ram >= $MIN_RAM_GB or err("Could not determine available RAM");
-  return $ram;
+  return sprintf("%.2f", $ram);
 }
 
 #----------------------------------------------------------------------
