@@ -12,8 +12,8 @@ use Cwd qw(realpath getcwd);
 # Globals
 my $EXE = basename($0);
 my $VERSION = "0.9.2";
+my $AUTHOR = "Torsten Seemann"
 my $URL = "https://github.com/tseemann/shovill";
-my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
@@ -522,34 +522,39 @@ sub setOptions {
   use Getopt::Long;
 
   @Options = (
+    "GENERAL",
     {OPT=>"help",       VAR=>\&usage,                    DESC=>"This help"},
     {OPT=>"version!",   VAR=>\&version,                  DESC=>"Print version and exit"},
     {OPT=>"check!",     VAR=>\&check_deps,               DESC=>"Check dependencies are installed"},
     {OPT=>"debug!",     VAR=>\$debug,     DEFAULT=>0,    DESC=>"Debug info"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
-    {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
-    {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
-    {OPT=>"force!",     VAR=>\$force,     DEFAULT=>0,    DESC=>"Force overwite of existing output folder"},
+    "INPUT",
     {OPT=>"R1=s",       VAR=>\$R1,        DEFAULT=>'',   DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",       VAR=>\$R2,        DEFAULT=>'',   DESC=>"Read 2 FASTQ"},
-    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
-    {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size <blank=AUTODETECT>"},
-    {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
-    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra SPAdes options eg. --plasmid --sc ..."},
-    {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
-    {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Use Trimmomatic to remove common adaptors first"},
-    {OPT=>"trimopt=s",  VAR=>\$trimopt,   DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
+    "OUTPUT",
+    {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
+    {OPT=>"force!",     VAR=>\$force,     DEFAULT=>0,    DESC=>"Force overwite of existing output folder"},
+    {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>1,    DESC=>"Minimum contig length <0=AUTO>"},
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"asm=s",      VAR=>\$asm,       DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
-    {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
-    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
+    "RESOURCES",
+    {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
+    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
+    "OPTIONS",
+    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
+    {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
+    {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
+    {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
+    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra SPAdes options eg. --plasmid --sc ..."},
+    {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Use Trimmomatic to remove common adaptors first"},
+    {OPT=>"trimopt=s",  VAR=>\$trimopt,   DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
   );
 
   ! @ARGV && usage(1);
 
-  &GetOptions(map {$_->{OPT}, $_->{VAR}} @Options) || usage(1);
+  &GetOptions(map {$_->{OPT}, $_->{VAR}} grep { ref } @Options) || usage(1);
 
   # Now setup default values.
   foreach (@Options) {
@@ -567,24 +572,27 @@ sub usage {
 
   select STDERR if $exitcode; # write to STDERR if exitcode is error
 
-  print "Synopsis:\n  Faster de novo assembly pipeline based around Spades\n";
-  print "Usage:\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
-  print "Author:\n  $AUTHOR\n";
-  print "Options:\n";
+  print "SYNOPSIS\n  Faster de novo assembly pipeline based around Spades\n";
+  print "USAGE\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
   foreach (@Options) {
-    my $def = $_->{DEFAULT};
-    if (defined $def) {
-      $def = 'OFF' if $_->{OPT} =~ m/!$/;
-      $def = "'$def'" if $_->{OPT} =~ m/=s$/;
-      $def = " (default: $def)";
+    if (ref) {
+      my $def = $_->{DEFAULT};
+      if (defined $def) {
+        $def = 'OFF' if $_->{OPT} =~ m/!$/;
+        $def = "'$def'" if $_->{OPT} =~ m/=s$/;
+        $def = " (default: $def)";
+      }
+      $_->{OPT} =~ s/!$//;
+      $_->{OPT} =~ s/=s$/ XXX/;
+      $_->{OPT} =~ s/=i$/ N/;
+      $_->{OPT} =~ s/=f$/ n.nn/;
+      printf "  --%-13s %s%s\n", $_->{OPT}, $_->{DESC}, $def;
     }
-    $_->{OPT} =~ s/!$//;
-    $_->{OPT} =~ s/=s$/ XXX/;
-    $_->{OPT} =~ s/=i$/ N/;
-    $_->{OPT} =~ s/=f$/ n.nn/;
-    printf "  --%-13s %s%s\n", $_->{OPT}, $_->{DESC}, $def;
+    else {
+      print "$_\n"; # Subheadings in the help output
+    }
   }
-  print "Documentation:\n  $URL\n";
+  print "HOMEPAGE\n  $URL - $AUTHOR\n";
 
   exit($exitcode);
 }
