@@ -11,7 +11,7 @@ use English qw(-no_match_vars);
 use Cwd qw(realpath getcwd);
 
 # Globals
-my $EXE = basename($0);
+my $EXE = basename($PROGRAM_NAME);
 my $VERSION = "0.9.2";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
@@ -206,7 +206,7 @@ unless ($nocorr) {
   run_cmd("bwa index $target", $logfile);
   # use original reads here, to help fix any errors from overlapping PE stitching
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz"
-         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$$ -o $BAM)",
+         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$PROCESS_ID -o $BAM)",
          $logfile);
   run_cmd("samtools index $BAM", $logfile);
 
@@ -317,7 +317,7 @@ my @motd = (
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
   "The name '$EXE' is pronounced as 'shovel' in English",
 );
-srand( $$ + $t0 + $MAX_K ); # seed
+srand( $PROCESS_ID + $t0 + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
 msg("Done.");
 
@@ -558,7 +558,7 @@ sub setOptions {
 
   # Now setup default values.
   foreach (@Options) {
-    if (defined($_->{DEFAULT}) && !defined(${$_->{VAR}})) {
+    if (ref $_ && defined($_->{DEFAULT}) && !defined(${$_->{VAR}})) {
       ${$_->{VAR}} = $_->{DEFAULT};
     }
   }
