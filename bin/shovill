@@ -7,14 +7,14 @@ use File::Spec;
 use File::Copy;
 use File::Temp;
 use List::Util qw(min max);
+use English qw(-no_match_vars);
 use Cwd qw(realpath getcwd);
 
 # Globals
 my $EXE = basename($0);
 my $VERSION = "0.9.2";
-my $AUTHOR = "Torsten Seemann"
+my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
-my $OPSYS = $^O;
 my $BAM = "$EXE.bam";
 my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
 my $APPDIR = realpath( "$FindBin::RealBin/.." );
@@ -44,7 +44,7 @@ msg("You ran: @CMDLINE");
 msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Homepage is $URL");
-msg("Operating system is $OPSYS");
+msg("Operating system is $OSNAME");
 
 # Check options
 $outdir or err("Please specify output folder with --outdir");
@@ -331,7 +331,7 @@ sub check_deps {
   my($exit) = @_;
   # Check we have the required binaries
   my @exe = qw(seqtk pigz kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee);
-  push @exe, ($^O eq 'linux' ? 'vmstat' : 'sysctl');
+  push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
   for my $exe (@exe) {
     my $fullexe = find_exe($exe);
     $fullexe ? msg("Using $exe - $fullexe") : err("Could not find '$exe' - please install it.");
