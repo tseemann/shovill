@@ -25,7 +25,7 @@ SKESA=skesa
 echo "* $SKESA"
 mkdir -p $SKESA
 $WGET -O $SKESA/$SKESA https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
-PATH=$HERE/$SKESA:PATH
+PATH=$HERE/$SKESA:$PATH
 
 MEGAHITVER=1.1.3
 MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
