@@ -62,10 +62,13 @@ PATH=$HERE/$MEGAHIT:$PATH
 PILONVER=1.22
 JAR=pilon-$PILONVER.jar
 PILON=pilon
+PILONSH=$PILON/$PILON
 echo "* $JAR"
 $WGET https://github.com/broadinstitute/pilon/releases/download/v$PILONVER/$JAR
-echo "exec java -jar $PWD/$JAR" '"$@"' > $PILON
-chmod +x $PILON
+mkdir -p $PILON
+echo "exec java -jar $PWD/$JAR" '"$@"' > $PILONSJ
+chmod +x $PILONSH
+PATH=$HERE/$PILON:$PATH
 
 SPADESVER=3.11.0
 SPADES=SPAdes-$SPADESVER-Linux
@@ -90,12 +93,18 @@ PATH=$HERE/$FLASH:$PATH
 
 TRIMVER=0.36
 TRIM=Trimmomatic-$TRIMVER.zip
-TRIMSH=trimmomatic
+TRIMDIR=Trimmomatic-$TRIMVER
+TRIMSH=$TRIMDIR/trimmomatic
 echo "* $TRIM"
 $WGET http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/$TRIM
 unzip $TRIM
 echo "exec java -jar $PWD/Trimmomatic-$TRIMVER/trimmomatic-$TRIMVER.jar" '"$@"' > $TRIMSH
-chmod +x $TRIMSH
+chmod +x "$TRIMSH"
+cat "$TRIMSH"
+PATH=$HERE/$TRIMDIR:$PATH
+
+# cover anything else
+PATH=$PATH:$HERE
 
 echo "Deleting source files"
 rm -vf "$HERE/*.tar.*"
