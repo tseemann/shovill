@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/tseemann/shovill.svg?branch=master)](https://travis-ci.org/tseemann/shovill) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [](#lang-au)
 
 # Shovill
-Faster SPAdes assembly of Illumina reads
+Faster SPAdes (or better SKESA/Megahit) assembly of Illumina reads 
 
 ## Introduction
 
@@ -11,7 +11,10 @@ was a major improvement over previous assemblers like Velvet, but it can be very
 and does not handle overlapping paired-end reads well.
 
 Shovill is a pipeline which uses SPAdes at its core, but alters the steps before and after
-the primary assembly step to get near-identical results in far less time.  
+the primary assembly step to get similar results in less time.
+
+Shovill also supports other assemblers like SKESA and Megahit, so you can take advantage
+of the pre- and post-processing the Shovill provides with those too.
 
 ## Main steps
 
@@ -20,31 +23,29 @@ the primary assembly step to get near-identical results in far less time.
 3. Trim adapters from reads (with `--trim` only)
 4. Conservatively correct sequencing errors in reads
 5. Pre-overlap ("stitch") paired-end reads
-6. Assemble with "vanilla" SPAdes with modified kmer range and PE + long SE reads
-7. Use contigs not scaffolds
-8. Correct minor assembly errors by mapping reads back to contigs
-9. Remove contigs that are too short, too low coverage, or pure homopolymers
-10. Produce final FASTA with nicer names
+6. Assemble with SPAdes/SKESA/Megahit with modified kmer range and PE + long SE reads
+7. Correct minor assembly errors by mapping reads back to contigs
+8. Remove contigs that are too short, too low coverage, or pure homopolymers
+9. Produce final FASTA with nicer names and parseable annotations
 
 ## Quick Start
 
 ```bash
-% shovill --outdir mrsa --R1 staph_R1.fq.gz --R2 staph_R2.fq.gz
+% shovill --outdir out --R1 test/R1.fq.gz --R2 test/R2.fq.gz
 
 <snip>
-Final assembly in: mrsa/contigs.fa
+Final assembly in: test/contigs.fa
 It contains 17 (min=150) contigs totalling 169611 bp.
 Done.
 
-% ls mrsa
+% ls out
 
-00-shovill.log  30-trimmomatic.log  60-spades.log  contigs.fa   scaffolds.fasta
-10-seqtk.tab    40-lighter.log      70-bwa.log     contigs.gfa  contigs.fasta
-20-kmc.log      50-flash.log        80-pilon.log   flash.hist   before_rr.fasta
+contigs.fa   contigs.gfa   shovill.corrections  
+shovill.log  spades.fasta
 
-% head -n 4 mrsa/contigs.fa
+% head -n 4 out/contigs.fa
 
->contig00001 len=52653 cov=32.7 corr=1 spades=NODE_1_length_52642_cov_32.67243_pilon
+>contig00001 len=52653 cov=32.7 corr=1 origname=NODE_1_length_52642_cov_32.67243_pilon
 ATAACGCCCTGCTGGCCCAGGTCATTTTATCCAATCTGGACCTCTCGGCTCGCTTTGAAGAAT
 GAGCGAATTCGCCGTTCAGTCCGCTGGACTTCGGACTTAAAGCCGCCTAAAACTGCACGAACC
 ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
@@ -84,11 +85,13 @@ git clone https://github.com/tseemann/shovill.git
 ```
 You will need to install all the dependencies manually:
 * SPAdes >= 3.11
+* SKESA
+* MEGAHIT
 * Lighter
 * FLASH
 * SAMtools >= 1.3
-* BWA MEM
-* KMC >= 2
+* BWA MEM 
+* MASH >= 2.0
 * seqtk
 * pigz
 * Pilon (Java)
@@ -106,74 +109,71 @@ The FASTA description of each sequence in `contigs.fa` have space-separated
 (`cov`), the number of post-assembly SNP/indel corrections made (`corr`),
 and the original contig name from Spades (`spades`). Two examples are:
 ```
->contig00001 len=263154 cov=8.9 corr=1 spades=NODE_1_length_263154_cov_8.86703_pilon
->contig00041 len=339 cov=8.8 corr=0 spades=NODE_41_length_339_cov_8.77027_pilon
+>contig00001 len=263154 cov=8.9 corr=1 origname=NODE_1_length_263154_cov_8.86703_pilon
+>contig00041 len=339 cov=8.8 corr=0 origname=NODE_41_length_339_cov_8.77027_pilon
 ```
 
 The (uncorrected) assembly graph file for viewing in 
 [Bandage](https://rrwick.github.io/Bandage/) is available too:
 ```
-contigs.gfa
+contigs.gfa  # or contigs.fastg
 ```
 
-There is a log file for each of the tools used to generate the assembly:
-```
-00-shovill.log
-10-seqtk.tab
-20-kmc.log
-30-trimmomatic.log
-40-lighter.log
-50-flash.log
-60-spades.log
-70-bwa.log
-80-pilon.log
+There is a log file to examine when things don't succeed:
+``
+shovill.log
 ```
 
-As Spades is the most important tool used, some useful output files are
-kept.<br>
+The original contigs file produced by the chosen assembler is also present.<BR>
 &#9888; Do not confuse the final `contigs.fa` with these files!
 ```
-before_rr.fasta
-contigs.fasta
-scaffolds.fasta
+skesa.fasta
+spades.fasta
+megahit.fasta
 ```
 
-A couple of tool output files are also kept and may be useful to examine:
+The corrections made to the assembler output are in
 ```
-flash.hist
-pilon.changes
+shovill.corrections
 ```
 
 ## Advanced options
 
 ```
+GENERAL
   --help          This help
   --version       Print version and exit
   --check         Check dependencies are installed
-  --debug         Debug info (default: OFF)
-  --cpus N        Number of CPUs to use (default: 16)
-  --outdir XXX    Output folder (default: '')
-  --force         Force overwite of existing output folder (default: OFF)
+INPUT
   --R1 XXX        Read 1 FASTQ (default: '')
   --R2 XXX        Read 2 FASTQ (default: '')
   --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 100)
-  --gsize XXX     Estimated genome size <blank=AUTODETECT> (default: '')
+  --gsize XXX     Estimated genome size eg. 3.2M <blank=AUTODETECT> (default: '')
+OUTPUT
+  --outdir XXX    Output folder (default: '')
+  --force         Force overwite of existing output folder (default: OFF)
+  --minlen N      Minimum contig length <0=AUTO> (default: 1)
+  --mincov n.nn   Minimum contig coverage <0=AUTO> (default: 2)
+  --namefmt XXX   Format of contig FASTA IDs in 'printf' style (default: 'contig%05d')
+  --keepfiles     Keep intermediate files (default: OFF)
+RESOURCES
+  --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
+  --cpus N        Number of CPUs to use (0=ALL) (default: 0)
+  --ram n.nn      Try to keep RAM usage below this many GB (default: 8)
+ASSEMBLER
+  --assembler XXX Assembler: megahit spades skesa (default: 'spades')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
-  --opts XXX      Extra SPAdes options eg. --plasmid --sc ... (default: '')
+  --opts XXX      Extra assembler options: eg. spades: --plasmid --sc ... (default: '')
+MODULES
   --nocorr        Disable post-assembly correction (default: OFF)
   --trim          Use Trimmomatic to remove common adaptors first (default: OFF)
-  --trimopt XXX   Trimmomatic options (default: 'ILLUMINACLIP:/home/tseemann/git/shovill/bin/../db/trimmomatic.fa:1:30:11 LEADING:3 TRAILING:3 MINLEN:30 TOPHRED33')
-  --minlen N      Minimum contig length <0=AUTO> (default: 0)
-  --mincov n.nn   Minimum contig coverage <0=AUTO> (default: 2)
-  --asm XXX       Spades result to correct: before_rr contigs scaffolds (default: 'contigs')
-  --tmpdir XXX    Fast temporary directory (default: '/tmp')
-  --ram N         Try to keep RAM usage below this many GB (default: 32)
-  --keepfiles     Keep intermediate files (default: OFF)
+  --trimopt XXX   Trimmomatic options (default: 'ILLUMINACLIP:/home/tseemann/git/shovill/db/trimmomatic.fa:1:30:11 LEADING:3 TRAILING:3 MINLEN:30 TOPHRED33')
 ```
 
 ## Feedback
 
-Please file questions, bugs or ideas to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
+Please file questions, bugs or ideas 
+to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
 
 ## License
 
