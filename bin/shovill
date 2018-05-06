@@ -34,6 +34,24 @@ my $t0 = time;                # basetime to measure running duration
 
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit) );
 
+my %VERSION = (
+  'seqtk'       => 'seqtk 2>&1 | grep Version',
+  'pigz'        => 'pigz --version 2>&1',
+  'mash'        => 'mash --version 2>&1',
+  'trimmomatic' => 'trimmomatic -version 2>&1',
+  'lighter'     => 'lighter -v 2>&1',
+  'flash'       => 'flash --version 2>&1 | grep FLASH',
+  'spades.py'   => 'spades.py  --version 2>&1',
+  'skesa'       => 'skesa --version 2>&1 | grep SKESA',
+  'megahit'     => 'megahit --version 2>&1',
+  'bwa'         => 'bwa 2>&1 | grep Version:',
+  'samtools'    => 'samtools 2>&1 | grep Version:',
+  'java'        => 'java -version 2>&1 | grep version',
+  'pilon'       => 'pilon --version 2>&1',
+  'vmstat'      => 'vmstat --version 2>&1',
+  'sysctl'      => 'uname -rs',
+);
+
 # Options
 my(@Options, $debug, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
@@ -396,11 +414,22 @@ exit(0);
 sub check_deps {
   my($exit) = @_;
   # Check we have the required binaries
-  my @exe = qw(seqtk pigz mash trimmomatic lighter flash spades.py skesa megahit bwa samtools java pilon tee);
-  push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
+  delete $VERSION{ $OSNAME eq 'linux' ? 'sysctl' : 'vmstat' };
+  my @exe = sort keys %VERSION;
+  #push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
   for my $exe (@exe) {
     my $fullexe = find_exe($exe);
-    $fullexe ? msg("Using $exe - $fullexe") : err("Could not find '$exe' - please install it.");
+    if ($fullexe) {
+      my $ver = '(version unknown)';
+      if (my $vcmd = $VERSION{$exe}) {
+        ($ver) = qx($vcmd);
+        chomp $ver;
+      }
+      msg("Using $exe - $fullexe | $ver");
+    }
+    else {
+      err("Could not find '$exe' - please install it.");
+    }
   }
   exit(0) if $exit;
 }
