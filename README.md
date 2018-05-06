@@ -120,7 +120,7 @@ contigs.gfa  # or contigs.fastg
 ```
 
 There is a log file to examine when things don't succeed:
-``
+```
 shovill.log
 ```
 
