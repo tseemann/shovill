@@ -99,43 +99,36 @@ You will need to install all the dependencies manually:
 
 ## Output files
 
-The most important output file is the final, corrected assembly:
-```
-contigs.fa
-```
+Filename | Description
+---------|------------
+`contigs.fa` | The final assembly you should use
+`shovill.log` | Full log file for bug reporting
+`shovill.corrections` | List of post-assembly corrections
+`contigs.gfa` | Assembly graph (spades)
+`contigs.fastg` | Assembly graph (megahit)
+`skesa.fasta` | Raw assembly (skesa)
+`spades.fasta` | Raw assembled contigs (spades)
+`megahit.fasta` | Raw assembly (megahit))
 
-The FASTA description of each sequence in `contigs.fa` have space-separated
-`name=value` pairs with the length in bases (`len`), the average coverage
-(`cov`), the number of post-assembly SNP/indel corrections made (`corr`),
-and the original contig name from Spades (`spades`). Two examples are:
+### `contigs.fa`
+
+This is most important output file - the final, corrected assembly.
+It contains entries like this:
+
 ```
 >contig00001 len=263154 cov=8.9 corr=1 origname=NODE_1_length_263154_cov_8.86703_pilon
 >contig00041 len=339 cov=8.8 corr=0 origname=NODE_41_length_339_cov_8.77027_pilon
 ```
 
-The (uncorrected) assembly graph file for viewing in 
-[Bandage](https://rrwick.github.io/Bandage/) is available too:
-```
-contigs.gfa  # or contigs.fastg
-```
+The sequence IDs are named as per the `--namefmt` option, and the comment field
+is a series of space-separated `name=value` pairs with the following meanings:
 
-There is a log file to examine when things don't succeed:
-```
-shovill.log
-```
-
-The original contigs file produced by the chosen assembler is also present.<BR>
-&#9888; Do not confuse the final `contigs.fa` with these files!
-```
-skesa.fasta
-spades.fasta
-megahit.fasta
-```
-
-The corrections made to the assembler output are in
-```
-shovill.corrections
-```
+Pair | Meaning
+----|--------
+`len`  | Length of contig in basepairs
+`cov`  | Average k-mer coverage as reported by assembler
+`corr` | Number of post-assembly corrections (unless `--nocorr` used)
+`origname` | The original name of the contig (before applying `--namefmt`)
 
 ## Advanced options
 
@@ -170,6 +163,57 @@ MODULES
   --trimopt XXX   Trimmomatic options (default: 'ILLUMINACLIP:/home/tseemann/git/shovill/db/trimmomatic.fa:1:30:11 LEADING:3 TRAILING:3 MINLEN:30 TOPHRED33')
 ```
 
+### --depth
+Giving an assembler too much data is a bad thing. There comes a point where you are no
+longer adding new information (as the genome is a fixed size), and only adding more noise 
+(sequencing errors). Most assemblers seem to be happy with ~100x depth, so Shovill will
+downsample your FASTQ files to this depth. It estimates depth by dividing read yield by
+genome size.
+
+### --gsize
+The genome size is needed to estimate depth and for the read error correction stage.
+If you don't provide `--gsize`, it will be estimated via k-mer frequencies using `mash`.
+It doesn't need to be a perfect estimate, just in the right ballpark.
+
+### --keepfiles
+This will keep all the intermediate files in `--outdir` so you can explore and debug.
+
+### --cpus
+By default it will attempt to use all available CPU cores.
+
+### --ram
+Shovill will do its best to keep memory usage below this value, but it is not guaranteed.
+If you are on a HPC cluster, you should make sure you tell your job submission engine
+a value higher than this.
+
+### --assembler
+By default it will use SPAdes, but you can also choose Megahit or SKESA. These are much
+faster than SPAdes, but give lesser assemblies. If you use SKESA you can probably use
+`--noreadcorr` and `--nocoor` because it has some of that functionality inbuilt and is
+conservative.
+
+### --kmers
+A series of kmers are chosen based on the read length distribution. You can override
+this with this option.
+
+### Choosing which stages to use
+
+Stage | Enable | Disable
+------|--------|--------
+Genome size estimation | - | --gsize XX
+Read subsampling | --depth N | --depth 0
+Read trimming | --trim | -
+Read error correction | - | --noreadcorr
+Read stitching/overlap | - | --nostitch
+Contig correct | - | --nocorr
+
+## FAQ
+
+* _Does `shovill` accept single-end reads?_
+  No, but it might one day.
+* _Do you support long reads from Pacbio or Nanopore?_
+  No, this is strictly an Illumina based pipeline.
+
 ## Feedback
 
 Please file questions, bugs or ideas 
@@ -185,5 +229,4 @@ Not published yet.
 
 ## Authors
 
-* **Torsten Seemann**
-* Jason Kwong, Simon Gladman, Anders Goncalves da Silva
+* Torsten Seemann (with Jason Kwong, Simon Gladman, Anders Goncalves da Silva)
