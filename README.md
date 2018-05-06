@@ -200,12 +200,12 @@ this with this option.
 
 Stage | Enable | Disable
 ------|--------|--------
-Genome size estimation | - | --gsize XX
-Read subsampling | --depth N | --depth 0
-Read trimming | --trim | -
-Read error correction | - | --noreadcorr
-Read stitching/overlap | - | --nostitch
-Contig correct | - | --nocorr
+Genome size estimation | _default_ | `--gsize XX`
+Read subsampling | `--depth N` | `--depth 0`
+Read trimming | `--trim` | _default_
+Read error correction | _default_ | `--noreadcorr`
+Read stitching/overlap | _default_ | `--nostitch`
+Contig correct | _default_ | `--nocorr`
 
 ## FAQ
 
