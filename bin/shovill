@@ -46,6 +46,11 @@ msg("Written by $AUTHOR");
 msg("Homepage is $URL");
 msg("Operating system is $OSNAME");
 
+# Hardware stats
+my $CORES = num_cpus();
+my $MEMORY = avail_ram_gb();
+msg("Machine has $CORES CPU cores and $MEMORY GB RAM");
+
 # Check options
 $outdir or err("Please specify output folder with --outdir");
 -r $R1 or err("Can't read --R1 $R1");
@@ -53,10 +58,12 @@ $outdir or err("Please specify output folder with --outdir");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
 sub is_integer { return $_[0] =~ m/^(\d+)$/ if defined $_[0]; }
 $gsize = $gsize ? guess_bp($gsize) : 0;
+$cpus ||= $CORES;  # if cpus==0 use all available
 $cpus > 0 or err("Invalid --cpus $cpus");
 $minlen >= 0 or err("Invalid --minlen $minlen");
 (defined $mincov && $mincov >= 0) or err("Please provide a non-negative value for --mincov");
 $ram >= $MIN_RAM_GB or err("Invalid --ram $ram - need at least $MIN_RAM_GB");
+$ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
@@ -66,12 +73,6 @@ $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig
 
 # Check deps
 check_deps();
-
-# Hardware stats
-my $CORES = num_cpus();
-my $MEMORY = avail_ram_gb();
-msg("Machine has $CORES CPU cores and $MEMORY GB RAM");
-$ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 
 # Make output folder
 make_folder($outdir);
@@ -540,7 +541,7 @@ sub setOptions {
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>min(16, num_cpus()), DESC=>"Number of CPUs to use"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>0,    DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
     "OPTIONS",
     {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
