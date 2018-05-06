@@ -32,7 +32,7 @@ my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MIN
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
 
-my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit) );
+my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
 my %VERSION = (
   'seqtk'       => 'seqtk 2>&1 | grep Version',
@@ -44,6 +44,9 @@ my %VERSION = (
   'spades.py'   => 'spades.py  --version 2>&1',
   'skesa'       => 'skesa --version 2>&1 | grep SKESA',
   'megahit'     => 'megahit --version 2>&1',
+  'megahit_toolkit' => 'megahit_toolkit dumpversion 2>&1',
+  'velveth'     => 'velveth 2>&1 | grep Version',
+  'velvetg'     => 'velvetg 2>&1 | grep Version',
   'bwa'         => 'bwa 2>&1 | grep Version:',
   'samtools'    => 'samtools 2>&1 | grep Version:',
   'java'        => 'java -version 2>&1 | grep version',
@@ -237,8 +240,6 @@ else {
   msg("User specified --nostitch, so no read stitching will be performed");
 }
 
-# Reads for assembly
-
 # Running the assembler engine of chouce
 msg("Assembling reads with '$assembler'");
 my $asm = "$assembler.fasta";  # assembler result file to process further
@@ -259,9 +260,9 @@ if ($assembler eq 'spades') {
 elsif ($assembler eq 'skesa') {
   $opts .= " --fastq $SE" if $SE;
   run_cmd(
-    "skesa --gz --fastq $PE1,$PE2 --use_paired_ends"
+    "skesa --gz $opts --fastq $PE1,$PE2 --use_paired_ends"
    ." --contigs_out $asm --min_contig 1"
-   ." --memory $ram_int --cores $cpus $opts"
+   ." --memory $ram_int --cores $cpus"
   );
   # skesa writes contigs directly, not "outdir"
 }
@@ -276,6 +277,15 @@ elsif ($assembler eq 'megahit') {
   my $K = $kmers[-1]; # get largets khmer
   msg("Generating genome graph from K=$K");
   run_cmd("megahit_toolkit contig2fastg $K $asmdir/intermediate_contigs/k$K.contigs.fa > $asmdir/contigs.fastg");
+}
+elsif ($assembler eq 'velvet') {
+  $opts .= " -short2 -fmtAuto $SE" if $SE;
+  my $K = $kmers[ int((0+@kmers)/2) ];
+  msg("Using K=$K for velveth");
+  run_cmd("OMP_NUM_THREADS=$cpus velveth $asmdir $K -create_binary -shortPaired -fmtAuto -separate $PE1 $PE2 $opts", "velveth");
+  run_cmd("OMP_NUM_THREADS=$cpus velvetg $asmdir -exp_cov auto -cov_cutoff auto -scaffolding yes", "velvetg");
+  copy("$asmdir/contigs.fa", $asm);
+  move("$asmdir/LastGraph", "$asmdir/contigs.LastGraph");
 }
 else {
   err("Invalid --assembler '$assembler'");
@@ -351,7 +361,7 @@ msg("Assembly is $nbases, estimated genome size was $gsize ($delta%)");
 
 # Spades changed output names when 3.11 came out
 my $graph = '';
-for my $f ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa', 'contigs.fastg') {
+for my $f ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa', 'contigs.fastg', 'contigs.LastGraph') {
   my $g = "$asmdir/$f";
   if (-r $g) {
     $g =~ m/\.(\w+)$/; # get file extension

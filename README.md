@@ -145,7 +145,7 @@ INPUT
 OUTPUT
   --outdir XXX    Output folder (default: '')
   --force         Force overwite of existing output folder (default: OFF)
-  --minlen N      Minimum contig length <0=AUTO> (default: 1)
+  --minlen N      Minimum contig length <0=AUTO> (default: 0)
   --mincov n.nn   Minimum contig coverage <0=AUTO> (default: 2)
   --namefmt XXX   Format of contig FASTA IDs in 'printf' style (default: 'contig%05d')
   --keepfiles     Keep intermediate files (default: OFF)
@@ -154,13 +154,14 @@ RESOURCES
   --cpus N        Number of CPUs to use (0=ALL) (default: 0)
   --ram n.nn      Try to keep RAM usage below this many GB (default: 8)
 ASSEMBLER
-  --assembler XXX Assembler: megahit spades skesa (default: 'spades')
+  --assembler XXX Assembler: spades skesa megahit (default: 'skesa')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
-  --opts XXX      Extra assembler options: eg. spades: --plasmid --sc ... (default: '')
+  --opts XXX      Extra assembler options eg. spades: --plasmid --sc ... (default: '')
 MODULES
+  --trim          Enable adaptor trimming (default: OFF)
+  --noreadcorr    Disable read error correction (default: OFF)
+  --nostitch      Disable read stitching (default: OFF)
   --nocorr        Disable post-assembly correction (default: OFF)
-  --trim          Use Trimmomatic to remove common adaptors first (default: OFF)
-  --trimopt XXX   Trimmomatic options (default: 'ILLUMINACLIP:/home/tseemann/git/shovill/db/trimmomatic.fa:1:30:11 LEADING:3 TRAILING:3 MINLEN:30 TOPHRED33')
 ```
 
 ### --depth
@@ -205,13 +206,16 @@ Read subsampling | `--depth N` | `--depth 0`
 Read trimming | `--trim` | _default_
 Read error correction | _default_ | `--noreadcorr`
 Read stitching/overlap | _default_ | `--nostitch`
-Contig correct | _default_ | `--nocorr`
+Contig correction | _default_ | `--nocorr`
 
 ## FAQ
 
 * _Does `shovill` accept single-end reads?_
+
   No, but it might one day.
+
 * _Do you support long reads from Pacbio or Nanopore?_
+
   No, this is strictly an Illumina based pipeline.
 
 ## Feedback
