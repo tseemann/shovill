@@ -18,7 +18,8 @@ my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
 my $APPDIR = realpath( "$FindBin::RealBin/.." );
 my $ADAPTERS = "$APPDIR/db/trimmomatic.fa"; # hard-code this for Conda etc.
-my $LOGFILE = "$EXE.log";
+my $LOGTMP = File::Temp->new();
+my $LOGFILE = $LOGTMP->filename;
 
 my $MIN_K = 31;               # sensible minimum, although prefer higher
 my $MAX_K = 127;              # maximum for most assemblers
@@ -26,6 +27,7 @@ my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
 my $MINBQ = 3;                # for trimming and stats
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 1;           # for all tools
+my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
@@ -36,7 +38,8 @@ my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit) );
 my(@Options, $debug, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $R1, $R2, $assembler, $opts, $ram, $depth,
-             $nocorr, $trim, $trimopt, $minlen, $mincov);
+             $nocorr, $trim, $nostitch, $noreadcorr,
+             $minlen, $mincov);
 setOptions();
 
 # Say hello
@@ -85,6 +88,10 @@ $R2 = File::Spec->rel2abs($R2);
 msg("Changing into folder: $outdir");
 my $cwd = getcwd();
 chdir($outdir);
+# Switch to permanent logfile
+my $real_log = "$EXE.log";
+copy($LOGFILE, $real_log);
+$LOGFILE = $real_log;
 
 # Get some read stats
 msg("Collecting raw read statistics with 'seqtk'");
@@ -96,9 +103,9 @@ unless ($gsize) {
   msg("Estimating genome size with 'mash'");
   my $minkc = 3;
   my $mincov = 25;
-  my $tmpout = File::Temp->new();
-  run_cmd("mash sketch -o $tmpout -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E");
-  unlink $tmpout->filename;
+  my $tmpout = File::Temp->newdir();
+  run_cmd("mash sketch -o $tmpout/sketch -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E");
+  unlink "$tmpout/sketch.msh";
   my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
   $bp =~ m/(\S+)$/ or err("Could not determine genome size from '$bp'");
   $gsize = int($1);
@@ -127,7 +134,7 @@ if ($trim) {
   msg("Trimming reads");
   run_cmd(
     "_JAVA_OPTIONS=-Xmx${ram}g trimmomatic PE -threads $cpus -phred33".
-    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $trimopt"
+    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $TRIMOPT"
   );
 }
 else {
@@ -140,7 +147,7 @@ my $RLEN = $stat->{'avg_len'};
 msg("Average read length looks like $RLEN bp");
 unless ($minlen) {
   $minlen = int( $RLEN / 2);
-  msg("Setting --minlen to $minlen");
+  msg("Automatically setting --minlen to $minlen");
 }
 
 # Choosing some kmers
@@ -172,53 +179,73 @@ $kmers = join(',', @kmers);
 msg("Using kmers: $kmers");
 
 # Correct reads
-msg("Correcting reads with 'Lighter'");
-run_cmd("lighter -od . -r R1.fq.gz -r R2.fq.gz -K 32 $gsize -t $cpus -maxcor 1");
+my $COR1 = "R1.fq.gz";
+my $COR2 = "R2.fq.gz";
+unless ($noreadcorr) {
+  msg("Correcting reads with 'Lighter'");
+  run_cmd("lighter -od . -r R1.fq.gz -r R2.fq.gz -K 32 $gsize -t $cpus -maxcor 1");
+  $COR1 = "R1.cor.fq.gz";
+  $COR2 = "R2.cor.fq.gz";
+}
+else {
+  msg("User specified --noreadcorr, so no read correction will be performed");
+}
 
 # Overlap corrected reads
-msg("Overlapping reads with 'FLASH'");
-# WARNING: An unexpectedly high proportion of combined pairs (13.03%)
-# overlapped by more than 80 bp, the --max-overlap (-M) parameter.
-#my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
-my $max_overlap = $stat->{'max_len'};
-run_cmd(
-  "flash -m $MIN_FLASH_OVERLAP -M $max_overlap"
- ." -d . -o flash -z -t $cpus R1.cor.fq.gz R2.cor.fq.gz"
-);
+my $SE  = "";
+my $PE1 = $COR1;
+my $PE2 = $COR2;
+unless ($nostitch) {
+  msg("Overlapping/stitcing PE reads with 'FLASH'");
+  # WARNING: An unexpectedly high proportion of combined pairs (13.03%)
+  # overlapped by more than 80 bp, the --max-overlap (-M) parameter.
+  #my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
+  my $max_overlap = $stat->{'max_len'};
+  run_cmd(
+    "flash -m $MIN_FLASH_OVERLAP -M $max_overlap"
+   ." -d . -o flash -z -t $cpus $COR1 $COR2"
+  );
+  $SE  = "flash.extendedFrags.fastq.gz";
+  $PE1 = "flash.notCombined_1.fastq.gz";
+  $PE2 = "flash.notCombined_2.fastq.gz";
+}
+else {
+  msg("User specified --nostitch, so no read stitching will be performed");
+}
 
 # Reads for assembly
-my $SE  = "flash.extendedFrags.fastq.gz";
-my $PE1 = "flash.notCombined_1.fastq.gz";
-my $PE2 = "flash.notCombined_2.fastq.gz";
+
+# Running the assembler engine of chouce
+msg("Assembling reads with '$assembler'");
 my $asm = "$assembler.fasta";  # assembler result file to process further
 my $asmdir = $assembler;
-
-# Running Spades
-msg("Assembling reads with '$assembler'");
 remove_tree($asmdir) if -d $asmdir;
 
 if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
+  $opts .= " --s2 $SE" if $SE;
   run_cmd(
-    "spades.py --pe1-1 $PE1 --pe1-2 $PE2 --s2 $SE"
+    "spades.py --pe1-1 $PE1 --pe1-2 $PE2"
    ." --only-assembler --threads $cpus --memory $ram_int"
    ." -o $asmdir --tmp-dir $tmpdir -k $kmers $opts"
   );
   copy("$asmdir/contigs.fasta", $asm);
 }
 elsif ($assembler eq 'skesa') {
+  $opts .= " --fastq $SE" if $SE;
   run_cmd(
-    "skesa --gz --fastq $PE1,$PE2 --use_paired_ends --fastq $SE"
-   ." --contigs_out $asm --min_contig $minlen"
+    "skesa --gz --fastq $PE1,$PE2 --use_paired_ends"
+   ." --contigs_out $asm --min_contig 1"
    ." --memory $ram_int --cores $cpus $opts"
   );
   # skesa writes contigs directly, not "outdir"
 }
 elsif ($assembler eq 'megahit') {
+  $opts .= " -r $SE" if $SE;
   run_cmd(
-    "megahit -1 $PE1 -2 $PE2 -r $SE --k-list $kmers"
+    "megahit -1 $PE1 -2 $PE2 --k-list $kmers"
    ." -m ".($ram * 1E9)." -t $cpus -o $asmdir"
-   ." --tmp-dir $tmpdir --min-contig-len $minlen $opts"
+   ." --tmp-dir $tmpdir --min-contig-len 1 $opts"
   );
   copy("$asmdir/final.contigs.fa", $asm);
   my $K = $kmers[-1]; # get largets khmer
@@ -569,7 +596,7 @@ sub setOptions {
     "OUTPUT",
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
     {OPT=>"force!",     VAR=>\$force,     DEFAULT=>0,    DESC=>"Force overwite of existing output folder"},
-    {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>1,    DESC=>"Minimum contig length <0=AUTO>"},
+    {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>0,    DESC=>"Minimum contig length <0=AUTO>"},
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
     {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
@@ -578,13 +605,14 @@ sub setOptions {
     {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>0,    DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
-    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'spades',  DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
+    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'skesa',   DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',        DESC=>"K-mers to use <blank=AUTO>"},
-    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',        DESC=>"Extra assembler options: eg. spades: --plasmid --sc ..."},
+    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',        DESC=>"Extra assembler options eg. spades: --plasmid --sc ..."},
     "MODULES",
+    {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Enable adaptor trimming"},
+    {OPT=>"noreadcorr!",VAR=>\$noreadcorr,DEFAULT=>0,    DESC=>"Disable read error correction"},
+    {OPT=>"nostitch!",  VAR=>\$nostitch,  DEFAULT=>0,    DESC=>"Disable read stitching"},
     {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
-    {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Use Trimmomatic to remove common adaptors first"},
-    {OPT=>"trimopt=s",  VAR=>\$trimopt,   DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
   );
 
   ! @ARGV && usage(1);
