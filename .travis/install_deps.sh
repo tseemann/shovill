@@ -7,7 +7,8 @@ UNTAR="tar xf"
 MASHVER=2.0
 MASH="mash-Linux64-v$MASHVER"
 MASHTAR="$MASH.tar"
-https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
+echo "* $MASH"
+$WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
 $UNTAR $MASHTAR
 PATH=$HERE/$MASH:$PATH
 
@@ -19,6 +20,20 @@ $UNTAR $SEQTK
 $MAKE -C seqtk-$SEQTKVER
 chmod g-w seqtk-$SEQTKVER/seqtk
 PATH=$HERE/seqtk-$SEQTKVER:$PATH
+
+SKESA=skesa
+echo "* $SKESA"
+mkdir -p $SKESA
+$WGET -O $SKESA/$SKESA https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
+PATH=$HERE/$SKESA:PATH
+
+MEGAHITVER=1.1.3
+MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
+MEGAHITTAR=$MEGAHIT.tar.gz
+echo "* $MEGAHIT"
+$WGET https://github.com/voutcn/megahit/releases/download/v$MEGAHITVER/$MEGAHITTAR
+$UNTAR $MEGAHITTAR
+PATH=$HERE/$MEGAHIT:$PATH
 
 #KMC=KMC3.linux.tar.gz
 #echo "* $KMC"

@@ -12,30 +12,31 @@ use Cwd qw(realpath getcwd);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "0.9.3";
+my $VERSION = "1.0-pre1";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
-my %VALID_ASM = ('before_rr'=>1, 'contigs'=>1, 'scaffolds'=>1);
 my $APPDIR = realpath( "$FindBin::RealBin/.." );
 my $ADAPTERS = "$APPDIR/db/trimmomatic.fa"; # hard-code this for Conda etc.
+my $LOGFILE = "$EXE.log";
 
 my $MIN_K = 31;               # sensible minimum, although prefer higher
-my $MAX_K = 127;              # spades max
+my $MAX_K = 127;              # maximum for most assemblers
 my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
 my $MINBQ = 3;                # for trimming and stats
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 1;           # for all tools
 
-my @LOG= ();                  # global log file, saved at end
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
+
+my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit) );
 
 # Options
 my(@Options, $debug, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
-             $kmers, $gsize, $R1, $R2, $opts, $ram, $depth,
-             $nocorr, $trim, $trimopt, $asm, $minlen, $mincov);
+             $kmers, $gsize, $R1, $R2, $assembler, $opts, $ram, $depth,
+             $nocorr, $trim, $trimopt, $minlen, $mincov);
 setOptions();
 
 # Say hello
@@ -45,6 +46,7 @@ msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Homepage is $URL");
 msg("Operating system is $OSNAME");
+msg("Perl version is $PERL_VERSION");
 
 # Hardware stats
 my $CORES = num_cpus();
@@ -67,9 +69,9 @@ $ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
-$VALID_ASM{ $asm } or err( "Invalid --asm must be one of: ",join(' ', keys %VALID_ASM) );
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
+exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 
 # Check deps
 check_deps();
@@ -95,24 +97,12 @@ unless ($gsize) {
   my $minkc = 3;
   my $mincov = 25;
   my $tmpout = File::Temp->new();
-  run_cmd("mash sketch -o $tmpout -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E", "20-mash.log");
+  run_cmd("mash sketch -o $tmpout -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E");
   unlink $tmpout->filename;
-  my($bp) = grep { m/Estimated genome size/i } read_lines('20-mash.log');
+  my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
   $bp =~ m/(\S+)$/ or err("Could not determine genome size from '$bp'");
   $gsize = int($1);
 }
-# Estimate genome size (or use genome size provided) using MASH
-#unless ($gsize) {
-#  msg("Estimating genome size with 'kmc'");
-#  # FIXME: want to choose a dynamic kmer cutoff for high cov samples
-#  my $minkc = 3;  # max(3, int($depth/100));
-#  my $dir = File::Temp->newdir(DIR => $tmpdir);
-#  my $dirname = $dir -> dirname;
-#  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $dirname", "20-kmc.log");
-#  my($ucount) = grep { m/unique\s+counted/ } read_lines('20-kmc.log');
-#  $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
-#  $gsize = $1;
-#}
 msg("Using genome size $gsize bp");
 
 # Estimate sequencing depth
@@ -137,8 +127,7 @@ if ($trim) {
   msg("Trimming reads");
   run_cmd(
     "_JAVA_OPTIONS=-Xmx${ram}g trimmomatic PE -threads $cpus -phred33".
-    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $trimopt",
-    "30-trimmomatic.log",
+    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $trimopt"
   );
 }
 else {
@@ -184,10 +173,7 @@ msg("Using kmers: $kmers");
 
 # Correct reads
 msg("Correcting reads with 'Lighter'");
-run_cmd(
-  "lighter -od . -r R1.fq.gz -r R2.fq.gz -K 32 $gsize -t $cpus -maxcor 1",
-  "40-lighter.log"
-);
+run_cmd("lighter -od . -r R1.fq.gz -r R2.fq.gz -K 32 $gsize -t $cpus -maxcor 1");
 
 # Overlap corrected reads
 msg("Overlapping reads with 'FLASH'");
@@ -195,42 +181,75 @@ msg("Overlapping reads with 'FLASH'");
 # overlapped by more than 80 bp, the --max-overlap (-M) parameter.
 #my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
 my $max_overlap = $stat->{'max_len'};
-run_cmd("flash -m $MIN_FLASH_OVERLAP -M $max_overlap -d . -o flash -z -t $cpus R1.cor.fq.gz R2.cor.fq.gz",
-  "50-flash.log"
+run_cmd(
+  "flash -m $MIN_FLASH_OVERLAP -M $max_overlap"
+ ." -d . -o flash -z -t $cpus R1.cor.fq.gz R2.cor.fq.gz"
 );
 
+# Reads for assembly
+my $SE  = "flash.extendedFrags.fastq.gz";
+my $PE1 = "flash.notCombined_1.fastq.gz";
+my $PE2 = "flash.notCombined_2.fastq.gz";
+my $asm = "$assembler.fasta";  # assembler result file to process further
+my $asmdir = $assembler;
+
 # Running Spades
-# https://twitter.com/spadesassembler/status/907714056387252225
-msg("Assembling reads with SPAdes");
-run_cmd(
-  "spades.py --pe1-1 flash.notCombined_1.fastq.gz --pe1-2 flash.notCombined_2.fastq.gz --s2 flash.extendedFrags.fastq.gz"
- ." --only-assembler --threads $cpus --memory $ram_int -o . --tmp-dir $tmpdir -k $kmers $opts",
- "/dev/null",  # spades makes its own log file
-);
+msg("Assembling reads with '$assembler'");
+remove_tree($asmdir) if -d $asmdir;
+
+if ($assembler eq 'spades') {
+  # https://twitter.com/spadesassembler/status/907714056387252225
+  run_cmd(
+    "spades.py --pe1-1 $PE1 --pe1-2 $PE2 --s2 $SE"
+   ." --only-assembler --threads $cpus --memory $ram_int"
+   ." -o $asmdir --tmp-dir $tmpdir -k $kmers $opts"
+  );
+  copy("$asmdir/contigs.fasta", $asm);
+}
+elsif ($assembler eq 'skesa') {
+  run_cmd(
+    "skesa --gz --fastq $PE1,$PE2 --use_paired_ends --fastq $SE"
+   ." --contigs_out $asm --min_contig $minlen"
+   ." --memory $ram_int --cores $cpus $opts"
+  );
+  # skesa writes contigs directly, not "outdir"
+}
+elsif ($assembler eq 'megahit') {
+  run_cmd(
+    "megahit -1 $PE1 -2 $PE2 -r $SE --k-list $kmers"
+   ." -m ".($ram * 1E9)." -t $cpus -o $asmdir"
+   ." --tmp-dir $tmpdir --min-contig-len $minlen $opts"
+  );
+  copy("$asmdir/final.contigs.fa", $asm);
+  my $K = $kmers[-1]; # get largets khmer
+  msg("Generating genome graph from K=$K");
+  run_cmd("megahit_toolkit contig2fastg $K $asmdir/intermediate_contigs/k$K.contigs.fa > $asmdir/contigs.fastg");
+}
+else {
+  err("Invalid --assembler '$assembler'");
+}
 
 # Correct contigs with Pilon
 my $changes = {};
 
 unless ($nocorr) {
-  my $logfile = "70-bwa.log";
-  my $target = "$asm.fasta";
-  -r $target or err("Can not see '$target' file to correct!");
-  msg("Checking for assembly errors in $target");
-  run_cmd("bwa index $target", $logfile);
+  -r $asm or err("Can not see '$asm' file to correct!");
+  msg("Checking for assembly errors in $asm");
+  run_cmd("bwa index $asm");
   # use original reads here, to help fix any errors from overlapping PE stitching
-  run_cmd("(bwa mem -v 3 -x intractg -t $cpus $target R1.fq.gz R2.fq.gz"
-         ." | samtools sort --threads $lesscpus -m ${half_ram}G --reference $target -T $tmpdir/samtools.$PROCESS_ID -o $BAM)",
-         $logfile);
-  run_cmd("samtools index $BAM", $logfile);
+  run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
+         ." | samtools sort --threads $lesscpus -m ${half_ram}G"
+         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)");
+  run_cmd("samtools index $BAM");
 
-  msg("Correcting errors in $target");
-  run_cmd(
-    "_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $target --frags $BAM --fix bases --output pilon --threads $cpus --changes --mindepth 0.25",
-    "80-pilon.log");
-  move($target, "$target.uncorrected");
-  move("pilon.fasta", $target);
+  msg("Correcting errors in $asm");
+  run_cmd("_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $asm --frags $BAM"
+         ." --fix bases --output pilon --threads $cpus --changes --mindepth 0.25");
+  move($asm, "$asm.uncorrected");
+  move("pilon.fasta", $asm);
   # Count changes per contig - return a hashref
   $changes = count_changes("pilon.changes");
+  move("pilon.changes", "shovill.corrections");
 }
 else {
   msg("User supplied --nocorr, so not correcting contigs.");
@@ -239,12 +258,14 @@ else {
 # Write final answer with nicer names
 my $ncontigs = 0;
 my $nbases = 0;
-my $seq = read_fasta("$asm.fasta");
+my $seq = read_fasta($asm);
 my %len = map { ( $_ => length($seq->{$_}) ) } (keys %{$seq});
 for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
-  # NODE_1_length_114969_cov_29.8803_pilon
-  $id =~ m/cov_(\d+(\.\d+)?)/ or err("Could not get coverage of contig: $id");
-  my $cov = $1;
+  # spades  >NODE_1_length_114969_cov_29.8803_pilon
+  # megahit >k127_7 flag=0 multi=23.8788 len=22  (I change SPC to _)
+  # skesa   >Contig_2_53.4039
+  $id =~ m/(multi=|cov_|Contig_\d+_)(\d+(\.\d+)?)/; # or err("Could not get coverage of contig: $id");
+  my $cov = $2 || $depth;
   if ($len{$id} < $minlen) {
     msg("Removing short contig (< $minlen bp): $id");
     delete $seq->{$id};
@@ -264,42 +285,40 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
     $cov = sprintf "%.1f", $cov;
     my $corr = $changes->{$id} || 0;
     # $id =~ s/_pilon$// unless $nocorr;
-    my $newid = sprintf "$namefmt len=$len cov=$cov corr=$corr spades=$id", $ncontigs;
+    my $newid = sprintf "$namefmt len=$len cov=$cov corr=$corr origname=$id", $ncontigs;
     $seq->{$newid} = $seq->{$id};
     delete $seq->{$id};
   }
 }
 write_fasta("contigs.fa", $seq);
+my $delta = sprintf "%+.2f", (100.0*($nbases-$gsize)/$gsize);
+msg("Assembly is $nbases, estimated genome size was $gsize ($delta%)");
 
 # Spades changed output names when 3.11 came out
-for my $gfa ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa') {
-  if (-r $gfa) {
-    msg("Using '$gfa' as 'contigs.gfa'");
-    move($gfa, "contigs.gfa");
+my $graph = '';
+for my $f ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa', 'contigs.fastg') {
+  my $g = "$asmdir/$f";
+  if (-r $g) {
+    $g =~ m/\.(\w+)$/; # get file extension
+    $graph = "contigs.$1";
+    msg("Using genome graph file '$g' => '$graph'");
+    move($g, $graph);
     last;
   }
 }
-
-msg("Writing $EXE log file.");
-move("spades.log", "60-spades.log");
+$graph or msg("Note: $assembler does not produce a graph file");
 
 # Cleanup time!
 unless ($keepfiles) {
   # corrected, overlapped and symlinked original reads
   unlink glob("*q.gz");
-  # keep the .gfa and delete the .fastg
-  unlink glob("*.fastg");
-  # BWA indices
-  unlink glob("$asm.fasta.*");
+  # BWA
+  unlink glob("$asm.*");
   unlink $BAM, "$BAM.bai";
-  # Spades Kmer folders
-  remove_tree( map { "K$_" } split m/,/, $kmers );
-  # KMC
-  unlink glob("kmc.*");
-  # other gumpf
-  remove_tree( 'misc' );
-  unlink glob("*.paths");
-  unlink "params.txt", "dataset.info", "flash.histogram", "input_dataset.yaml";
+  # assemblers
+  remove_tree( $asmdir );
+  # FLASH
+  unlink glob("flash.his*");
 }
 
 # Say our goodbyes
@@ -312,7 +331,7 @@ msg("Walltime used: $mins min $secs sec");
 #msg("Type '$EXE --citation' for more details.");
 
 msg("Results in: $outdir");
-msg("Final assembly graph: $outdir/contigs.gfa");
+msg("Final assembly graph: $outdir/$graph") if $graph;
 msg("Final assembly contigs: $outdir/contigs.fa");
 msg("It contains $ncontigs (min=$minlen) contigs totalling $nbases bp.");
 
@@ -323,19 +342,19 @@ my @motd = (
   "Wishing you a life free of misassemblies.",
   "Remember, genomic repeats > ~800bp will be collapsed into single contigs.",
   "Remember, an assembly is just a _hypothesis_ of the original sequence!",
-  "Use Bandage to inspect the .gfa assembly graph: https://rrwick.github.io/Bandage/",
+  "Use Bandage to inspect the .gfa/.fastg assembly graph: https://rrwick.github.io/Bandage/",
   "Found a bug in $EXE? Post it at $URL/issues",
   "Have a suggestion for $EXE? Tell me at $URL/issues",
   "The $EXE manual is at $URL/blob/master/README.md",
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
   "The name '$EXE' is pronounced as 'shovel' in English",
+  "If you know your genome size, use --gsize to skip the estimation step",
 );
 srand( $PROCESS_ID + $t0 + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
 msg("Done.");
 
-# Dump log and return to original folder
-write_lines("00-$EXE.log", @LOG);
+# return to original folder
 chdir($cwd);
 exit(0);
 
@@ -343,7 +362,7 @@ exit(0);
 sub check_deps {
   my($exit) = @_;
   # Check we have the required binaries
-  my @exe = qw(seqtk pigz mash trimmomatic lighter flash spades.py bwa samtools java pilon tee);
+  my @exe = qw(seqtk pigz mash trimmomatic lighter flash spades.py skesa megahit bwa samtools java pilon tee);
   push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
   for my $exe (@exe) {
     my $fullexe = find_exe($exe);
@@ -365,18 +384,19 @@ sub count_changes {
     $diff->{$1}++;
     $total++;
   }
-  msg("Repaired", scalar(keys %$diff), "contigs from $asm.fasta at $total positions.");
+  msg("Repaired", scalar(keys %$diff), "contigs from $asm at $total positions.");
   return $diff;
 }
 
 #----------------------------------------------------------------------
 sub read_stats {
   my($R1) = @_;
-  my $outfile = "10-seqtk.tab";
+  my $sf = File::Temp->new();
   my $stat;
   # we use MINBQ to get an idea of what it would be after quality clipping
-  run_cmd("seqtk fqchk -q$MINBQ \Q$R1\E > $outfile");
-  my @row = read_lines($outfile);
+  run_cmd("seqtk fqchk -q$MINBQ \Q$R1\E >".$sf->filename);
+  my @row = read_lines($sf->filename);
+  unlink $sf->filename;
 #  msg($row[0]);
   for my $tag ('min_len', 'max_len', 'avg_len') {
     $row[0] =~ m/$tag:\s*(\d+(\.\d+)?);/ or err("Can't parse $tag from: $row[0]");
@@ -416,12 +436,10 @@ sub guess_bp {
 
 #----------------------------------------------------------------------
 sub run_cmd {
-  my($cmd, $logfile) = @_;
-  if ($logfile) {
-    $cmd .= $debug ? " 2>&1 | tee -a $logfile" : " >> $logfile 2>&1";
-  }
+  my($cmd) = @_;
+  $cmd .= " 2>&1 | tee -a $LOGFILE";
   msg("Running: $cmd");
-  system($cmd)==0 or err("Error $? running command");
+  system($cmd)==0 or err("Error $? running command: $!");
 }
 
 #----------------------------------------------------------------------
@@ -438,7 +456,9 @@ sub find_exe {
 sub msg {
   my $msg = "@_\n";
   print STDERR $msg;
-  push @LOG, $msg;
+  open my $log, '>>', $LOGFILE;;
+  print $log "[$EXE] $msg";
+  close $LOGFILE;
 }
 
 #----------------------------------------------------------------------
@@ -486,8 +506,9 @@ sub read_fasta {
   open my $FASTA, '<', $fname or err("Could not open $fname");
   while (my $line = <$FASTA>) {
     chomp $line;
-    if ($line =~ m/^>(\S+)/) {
+    if ($line =~ m/^>(.*)$/) {
       $id = $1;
+      $id =~ s/\s/_/g;
       $seq->{$id} = '';
     }
     else {
@@ -539,28 +560,29 @@ sub setOptions {
     {OPT=>"help",       VAR=>\&usage,                    DESC=>"This help"},
     {OPT=>"version!",   VAR=>\&version,                  DESC=>"Print version and exit"},
     {OPT=>"check!",     VAR=>\&check_deps,               DESC=>"Check dependencies are installed"},
-    {OPT=>"debug!",     VAR=>\$debug,     DEFAULT=>0,    DESC=>"Debug info"},
+#    {OPT=>"debug!",     VAR=>\$debug,     DEFAULT=>0,    DESC=>"Debug info"},
     "INPUT",
     {OPT=>"R1=s",       VAR=>\$R1,        DEFAULT=>'',   DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",       VAR=>\$R2,        DEFAULT=>'',   DESC=>"Read 2 FASTQ"},
+    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
+    {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
     "OUTPUT",
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
     {OPT=>"force!",     VAR=>\$force,     DEFAULT=>0,    DESC=>"Force overwite of existing output folder"},
-    {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"minlen=i",   VAR=>\$minlen,    DEFAULT=>1,    DESC=>"Minimum contig length <0=AUTO>"},
     {OPT=>"mincov=f",   VAR=>\$mincov,    DEFAULT=>2,    DESC=>"Minimum contig coverage <0=AUTO>"},
-    {OPT=>"asm=s",      VAR=>\$asm,       DEFAULT=>'contigs', DESC=>"Spades result to correct: before_rr contigs scaffolds"},
+    {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
     {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>0,    DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
-    "OPTIONS",
-    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
-    {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
-    {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
+    "ASSEMBLER",
+    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'spades',  DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
+    {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',        DESC=>"K-mers to use <blank=AUTO>"},
+    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',        DESC=>"Extra assembler options: eg. spades: --plasmid --sc ..."},
+    "MODULES",
     {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
-    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra SPAdes options eg. --plasmid --sc ..."},
     {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Use Trimmomatic to remove common adaptors first"},
     {OPT=>"trimopt=s",  VAR=>\$trimopt,   DEFAULT=>"ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33", DESC=>"Trimmomatic options"},
   );
