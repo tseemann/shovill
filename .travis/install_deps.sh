@@ -1,3 +1,6 @@
+#!/bin/sh
+
+set -e
 
 HERE="$PWD"
 WGET="wget --quiet"
@@ -66,8 +69,9 @@ PILONSH=$PILON/$PILON
 echo "* $JAR"
 $WGET https://github.com/broadinstitute/pilon/releases/download/v$PILONVER/$JAR
 mkdir -p $PILON
-echo "exec java -jar $PWD/$JAR" '"$@"' > $PILONSJ
+echo "exec java -jar $PWD/$JAR" '"$@"' > $PILONSH
 chmod +x $PILONSH
+cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
 SPADESVER=3.11.0
