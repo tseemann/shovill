@@ -87,6 +87,7 @@ You will need to install all the dependencies manually:
 * SPAdes >= 3.11
 * SKESA
 * MEGAHIT
+* Velvet >= 1.2
 * Lighter
 * FLASH
 * SAMtools >= 1.3
@@ -106,9 +107,11 @@ Filename | Description
 `shovill.corrections` | List of post-assembly corrections
 `contigs.gfa` | Assembly graph (spades)
 `contigs.fastg` | Assembly graph (megahit)
+`contigs.LastGraph` | Assembly graph (velvet)
 `skesa.fasta` | Raw assembly (skesa)
 `spades.fasta` | Raw assembled contigs (spades)
-`megahit.fasta` | Raw assembly (megahit))
+`megahit.fasta` | Raw assembly (megahit)
+`velvet.fasta` | Raw assembly (velvet)
 
 ### `contigs.fa`
 
@@ -154,7 +157,7 @@ RESOURCES
   --cpus N        Number of CPUs to use (0=ALL) (default: 0)
   --ram n.nn      Try to keep RAM usage below this many GB (default: 8)
 ASSEMBLER
-  --assembler XXX Assembler: spades skesa megahit (default: 'skesa')
+  --assembler XXX Assembler: spades skesa megahit velvet (default: 'skesa')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
   --opts XXX      Extra assembler options eg. spades: --plasmid --sc ... (default: '')
 MODULES
