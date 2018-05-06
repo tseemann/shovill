@@ -85,6 +85,10 @@ $outdir = File::Spec->rel2abs($outdir);
 $R1 = File::Spec->rel2abs($R1);
 $R2 = File::Spec->rel2abs($R2);
 
+# Ensure we have a tempdir
+$tmpdir ||= File::Temp->newdir(CLEANUP=>1);
+msg("Using tempdir: $tmpdir");
+
 msg("Changing into folder: $outdir");
 my $cwd = getcwd();
 chdir($outdir);
@@ -601,7 +605,7 @@ sub setOptions {
     {OPT=>"namefmt=s",  VAR=>\$namefmt,   DEFAULT=>'contig%05d', DESC=>"Format of contig FASTA IDs in 'printf' style"},
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
-    {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '/tmp', DESC=>"Fast temporary directory"},
+    {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '', DESC=>"Fast temporary directory"},
     {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>0,    DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
