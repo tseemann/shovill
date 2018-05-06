@@ -4,6 +4,13 @@ WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
+MASHVER=2.0
+MASH="mash-Linux64-v$MASHVER"
+MASHTAR="$MASH.tar"
+https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
+$UNTAR $MASHTAR
+PATH=$HERE/$MASH:$PATH
+
 SEQTKVER=1.2
 SEQTK=v$SEQTKVER.tar.gz
 echo "* $SEQTK"
@@ -13,12 +20,12 @@ $MAKE -C seqtk-$SEQTKVER
 chmod g-w seqtk-$SEQTKVER/seqtk
 PATH=$HERE/seqtk-$SEQTKVER:$PATH
 
-KMC=KMC3.linux.tar.gz
-echo "* $KMC"
-$WGET https://github.com/refresh-bio/KMC/releases/download/v3.0.0/$KMC
-tar xvf $KMC
-rm -fv kmc_dump kmc_tools
-PATH=$HERE:$PATH
+#KMC=KMC3.linux.tar.gz
+#echo "* $KMC"
+#$WGET https://github.com/refresh-bio/KMC/releases/download/v3.0.0/$KMC
+#tar xvf $KMC
+#rm -fv kmc_dump kmc_tools
+#PATH=$HERE:$PATH
 
 PILONVER=1.22
 JAR=pilon-$PILONVER.jar

@@ -12,7 +12,7 @@ use Cwd qw(realpath getcwd);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "0.9.2";
+my $VERSION = "0.9.3";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -89,18 +89,30 @@ msg("Collecting raw read statistics with 'seqtk'");
 my $stat = read_stats($R1);
 map { msg("Read stats: $_ = ".$stat->{$_}) } (keys %$stat);
 
-# Estimate genome size (or use genome size provided)
+# Estimate genome size (or use genome size provided) using KMC
 unless ($gsize) {
-  msg("Estimating genome size with 'kmc'");
-  # FIXME: want to choose a dynamic kmer cutoff for high cov samples
-  my $minkc = 3;  # max(3, int($depth/100));
-  my $dir = File::Temp->newdir(DIR => $tmpdir);
-  my $dirname = $dir -> dirname;
-  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $dirname", "20-kmc.log");
-  my($ucount) = grep { m/unique\s+counted/ } read_lines('20-kmc.log');
-  $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
-  $gsize = $1;
+  msg("Estimating genome size with 'mash'");
+  my $minkc = 3;
+  my $mincov = 25;
+  my $tmpout = File::Temp->new();
+  run_cmd("mash sketch -o $tmpout -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E", "20-mash.log");
+  unlink $tmpout->filename;
+  my($bp) = grep { m/Estimated genome size/i } read_lines('20-mash.log');
+  $bp =~ m/(\S+)$/ or err("Could not determine genome size from '$bp'");
+  $gsize = int($1);
 }
+# Estimate genome size (or use genome size provided) using MASH
+#unless ($gsize) {
+#  msg("Estimating genome size with 'kmc'");
+#  # FIXME: want to choose a dynamic kmer cutoff for high cov samples
+#  my $minkc = 3;  # max(3, int($depth/100));
+#  my $dir = File::Temp->newdir(DIR => $tmpdir);
+#  my $dirname = $dir -> dirname;
+#  run_cmd("kmc -m$ram_int -sm -n256 -ci$minkc -k25 -t$cpus \Q$R1\E kmc $dirname", "20-kmc.log");
+#  my($ucount) = grep { m/unique\s+counted/ } read_lines('20-kmc.log');
+#  $ucount =~ m/(\d+)$/ or err("Could not determine unique counted k-mers using kmc");
+#  $gsize = $1;
+#}
 msg("Using genome size $gsize bp");
 
 # Estimate sequencing depth
@@ -331,7 +343,7 @@ exit(0);
 sub check_deps {
   my($exit) = @_;
   # Check we have the required binaries
-  my @exe = qw(seqtk pigz kmc trimmomatic lighter flash spades.py bwa samtools java pilon tee);
+  my @exe = qw(seqtk pigz mash trimmomatic lighter flash spades.py bwa samtools java pilon tee);
   push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
   for my $exe (@exe) {
     my $fullexe = find_exe($exe);
