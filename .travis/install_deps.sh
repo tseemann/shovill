@@ -20,7 +20,6 @@ $UNTAR $BWA.tar.bz2
 $MAKE -C $BWA 
 PATH=$HERE/$BWA:$PATH
 
-
 MASHVER=2.0
 MASH="mash-Linux64-v$MASHVER"
 MASHTAR="$MASH.tar"
@@ -31,7 +30,7 @@ PATH=$HERE/$MASH:$PATH
 
 SEQTKVER=1.2
 SEQTK=v$SEQTKVER.tar.gz
-echo "* $SEQTK"
+echo "* seqtk $SEQTK"
 $WGET https://github.com/lh3/seqtk/archive/$SEQTK
 $UNTAR $SEQTK
 $MAKE -C seqtk-$SEQTKVER
@@ -41,10 +40,9 @@ PATH=$HERE/seqtk-$SEQTKVER:$PATH
 SKESA=skesa
 echo "* $SKESA"
 mkdir -p $SKESA
-$WGET https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
-mv skesa.static $SKESA
-chmod +x $SKESA
-PATH=$HERE:$PATH
+$WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
+chmod +x $SKESA/skesa
+PATH=$HERE/$SKESA:$PATH
 
 MEGAHITVER=1.1.3
 MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
