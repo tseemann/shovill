@@ -107,6 +107,13 @@ chmod +x "$TRIMSH"
 cat "$TRIMSH"
 PATH=$HERE/$TRIMDIR:$PATH
 
+VELVET=velvet
+mkdir $VELVET
+wget -O $VELVET/velveth 'https://github.com/Victorian-Bioinformatics-Consortium/vague/blob/master/velvet-binaries/linux-x86_64/velveth?raw=true'
+wget -O $VELVET/velvetg 'https://github.com/Victorian-Bioinformatics-Consortium/vague/blob/master/velvet-binaries/linux-x86_64/velvetg?raw=true'
+chmod +x $VELVET/*
+PATH=$HERE/$VELVET:$PATH
+
 # cover anything else
 PATH=$PATH:$HERE
 
