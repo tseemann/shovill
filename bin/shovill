@@ -156,7 +156,8 @@ if ($trim) {
   msg("Trimming reads");
   run_cmd(
     "_JAVA_OPTIONS=-Xmx${ram}g trimmomatic PE -threads $cpus -phred33".
-    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $TRIMOPT"
+    " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $TRIMOPT",
+    "trimmomatic"
   );
 }
 else {
@@ -226,6 +227,7 @@ unless ($nostitch) {
   run_cmd(
     "flash -m $MIN_FLASH_OVERLAP -M $max_overlap"
    ." -d . -o flash -z -t $cpus $COR1 $COR2"
+   , "" # has its own label
   );
   $SE  = "flash.extendedFrags.fastq.gz";
   $PE1 = "flash.notCombined_1.fastq.gz";
@@ -250,6 +252,7 @@ if ($assembler eq 'spades') {
     "spades.py --pe1-1 $PE1 --pe1-2 $PE2"
    ." --only-assembler --threads $cpus --memory $ram_int"
    ." -o $asmdir --tmp-dir $tmpdir -k $kmers $opts"
+   , "spades"
   );
   copy("$asmdir/contigs.fasta", $asm);
 }
@@ -291,12 +294,12 @@ unless ($nocorr) {
   # use original reads here, to help fix any errors from overlapping PE stitching
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
          ." | samtools sort --threads $lesscpus -m ${half_ram}G"
-         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)");
+         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)", "bwa+samtools");
   run_cmd("samtools index $BAM");
 
   msg("Correcting errors in $asm");
   run_cmd("_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $asm --frags $BAM"
-         ." --fix bases --output pilon --threads $cpus --changes --mindepth 0.25");
+         ." --fix bases --output pilon --threads $cpus --changes --mindepth 0.25", "pilon");
   move($asm, "$asm.uncorrected");
   move("pilon.fasta", $asm);
   # Count changes per contig - return a hashref
@@ -499,8 +502,15 @@ sub guess_bp {
 
 #----------------------------------------------------------------------
 sub run_cmd {
-  my($cmd) = @_;
-  $cmd .= " 2>&1 | tee -a $LOGFILE";
+  my($cmd, $label) = @_;
+
+  if (!defined $label) {
+    $cmd =~ m/^(\S+)/;
+    $label ||= $1;
+  }
+  $label = "[$label] " if defined $label and $label ne '';
+
+  $cmd .= " 2>&1 | sed 's/^/$label/' | tee -a $LOGFILE";
   msg("Running: $cmd");
   system($cmd)==0 or err("Error $? running command: $!");
 }
@@ -517,11 +527,11 @@ sub find_exe {
 
 #----------------------------------------------------------------------
 sub msg {
-  my $msg = "@_\n";
+  my $msg = "[$EXE] @_\n";
   print STDERR $msg;
-  open my $log, '>>', $LOGFILE;;
-  print $log "[$EXE] $msg";
-  close $LOGFILE;
+  open my $log, '>>', $LOGFILE;
+  print $log $msg;
+  close $log;
 }
 
 #----------------------------------------------------------------------
