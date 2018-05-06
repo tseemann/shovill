@@ -260,6 +260,9 @@ else {
   err("Invalid --assembler '$assembler'");
 }
 
+# Check for zero output or failed assembly
+err("Assembly failed - $asm has zero contigs!") unless -s $asm;
+
 # Correct contigs with Pilon
 my $changes = {};
 
