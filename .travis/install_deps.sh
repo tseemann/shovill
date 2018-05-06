@@ -4,6 +4,23 @@ WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
+SAMTOOLSVER=1.8
+SAMTOOLS=samtools-$SAMTOOLSVER
+echo "* $SAMTOOLS"
+$WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
+$UNTAR $SAMTOOLS.tar.bz2
+(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
+PATH=$HERE/$SAMTOOLS/bin:$PATH
+
+BWAVER=0.7.17
+BWA=bwa-$BWAVER
+echo "* $BWA"
+$WGET https://github.com/lh3/bwa/releases/download/v$BWAVER/$BWA.tar.bz2
+$UNTAR $BWA.tar.bz2
+$MAKE -C $BWA 
+PATH=$HERE/$BWA:$PATH
+
+
 MASHVER=2.0
 MASH="mash-Linux64-v$MASHVER"
 MASHTAR="$MASH.tar"
@@ -24,8 +41,10 @@ PATH=$HERE/seqtk-$SEQTKVER:$PATH
 SKESA=skesa
 echo "* $SKESA"
 mkdir -p $SKESA
-$WGET -O $SKESA/$SKESA https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
-PATH=$HERE/$SKESA:$PATH
+$WGET https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
+mv skesa.static $SKESA
+chmod +x $SKESA
+PATH=$HERE:$PATH
 
 MEGAHITVER=1.1.3
 MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
@@ -57,22 +76,6 @@ $WGET http://spades.bioinf.spbau.ru/release$SPADESVER/$SPADES.tar.gz
 $UNTAR $SPADES.tar.gz
 PATH=$HERE/$SPADES/bin:$PATH
 
-SAMTOOLSVER=1.8
-SAMTOOLS=samtools-$SAMTOOLSVER
-echo "* $SAMTOOLS"
-$WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
-$UNTAR $SAMTOOLS.tar.bz2
-(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
-PATH=$HERE/$SAMTOOLS/bin:$PATH
-
-BWAVER=0.7.17
-BWA=bwa-$BWAVER
-echo "* $BWA"
-$WGET https://github.com/lh3/bwa/releases/download/v$BWAVER/$BWA.tar.bz2
-$UNTAR $BWA.tar.bz2
-$MAKE -C $BWA 
-PATH=$HERE/$BWA:$PATH
-
 LIGHTER=v1.1.1.tar.gz
 echo "* $LIGHTER"
 $WGET https://github.com/mourisl/Lighter/archive/$LIGHTER
@@ -93,7 +96,7 @@ TRIMSH=trimmomatic
 echo "* $TRIM"
 $WGET http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/$TRIM
 unzip $TRIM
-echo "exec java ar $PWD/Trimmomatic-$TRIMVER/trimmomatic-$TRIMVER.jar" '"$@"' > $TRIMSH
+echo "exec java -jar $PWD/Trimmomatic-$TRIMVER/trimmomatic-$TRIMVER.jar" '"$@"' > $TRIMSH
 chmod +x $TRIMSH
 
 echo "Deleting source files"
