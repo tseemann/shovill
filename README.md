@@ -1,9 +1,8 @@
 [![Build Status](https://travis-ci.org/tseemann/shovill.svg?branch=master)](https://travis-ci.org/tseemann/shovill)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Twitter Follow](https://img.shields.io/twitter/follow/espadrine.svg?style=social&label=Follow%20%40torstenseemann)](https://twitter.com/torstenseemann)
 
 # Shovill
-Faster SPAdes (or better SKESA/Megahit) assembly of Illumina reads 
+Faster SPAdes (or better SKESA/Megahit/Velvet) assembly of Illumina reads 
 
 ## Introduction
 
