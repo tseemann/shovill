@@ -129,7 +129,7 @@ unless ($gsize) {
   my $minkc = 3;
   my $mincov = 25;
   my $tmpout = File::Temp->newdir();
-  run_cmd("mash sketch -o $tmpout/sketch -p $cpus -k 32 -m $minkc -c $mincov -r \Q$R1\E");
+  run_cmd("mash sketch -o $tmpout/sketch -p $cpus -k 32 -m $minkc -r \Q$R1\E");
   unlink "$tmpout/sketch.msh";
   my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
   $bp =~ m/(\S+)$/ or err("Could not determine genome size from '$bp'");
