@@ -300,12 +300,13 @@ my $changes = {};
 unless ($nocorr) {
   -r $asm or err("Can not see '$asm' file to correct!");
   msg("Checking for assembly errors in $asm");
-  run_cmd("bwa index $asm");
+  run_cmd("bwa index $asm", "bwa-index");
   # use original reads here, to help fix any errors from overlapping PE stitching
+  my $sort_ram = int($half_ram * 1024 / $lesscpus); # RAM per thread, in Mb
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
-         ." | samtools sort --threads $lesscpus -m ${half_ram}G"
-         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)", "bwa+samtools");
-  run_cmd("samtools index $BAM");
+         ." | samtools sort --threads $lesscpus -m ${sort_ram}m"
+         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)", "bwa+samtools-sort");
+  run_cmd("samtools index $BAM", "samtools-index");
 
   msg("Correcting errors in $asm");
   run_cmd("_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $asm --frags $BAM"
