@@ -438,6 +438,7 @@ sub check_deps {
       if (my $vcmd = $VERSION{$exe}) {
         ($ver) = qx($vcmd);
         chomp $ver;
+        $ver or err("Could not determine version of '$exe' via '$vcmd'");
       }
       msg("Using $exe - $fullexe | $ver");
     }
