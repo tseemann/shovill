@@ -10,8 +10,6 @@ addons:
         packages:
             - pigz
             - unzip
-            - idba
-            - velvet
             
 install:
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
