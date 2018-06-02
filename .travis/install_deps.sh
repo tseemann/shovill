@@ -74,7 +74,7 @@ chmod +x $PILONSH
 cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
-SPADESVER=3.11.0
+SPADESVER=3.12.0
 SPADES=SPAdes-$SPADESVER-Linux
 echo "* $SPADES"
 $WGET http://spades.bioinf.spbau.ru/release$SPADESVER/$SPADES.tar.gz
