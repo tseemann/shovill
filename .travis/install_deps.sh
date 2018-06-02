@@ -74,10 +74,11 @@ chmod +x $PILONSH
 cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
+# http://cab.spbu.ru/files/release3.12.0/SPAdes-3.12.0-Linux.tar.gz
 SPADESVER=3.12.0
 SPADES=SPAdes-$SPADESVER-Linux
 echo "* $SPADES"
-$WGET http://spades.bioinf.spbau.ru/release$SPADESVER/$SPADES.tar.gz
+$WGET http://cab.spbu.ru/files/release$SPADESVER/$SPADES.tar.gz
 $UNTAR $SPADES.tar.gz
 PATH=$HERE/$SPADES/bin:$PATH
 
