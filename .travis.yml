@@ -10,6 +10,9 @@ addons:
         packages:
             - pigz
             - unzip
+            - libstdc++6
+            - liblzma5
+            - libbz2-1.0
             
 install:
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
