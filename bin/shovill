@@ -661,7 +661,7 @@ sub setOptions {
     {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>0,    DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>8,    DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
-    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'skesa',   DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
+    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'spades',   DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',        DESC=>"K-mers to use <blank=AUTO>"},
     {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',        DESC=>"Extra assembler options eg. spades: --plasmid --sc ..."},
     "MODULES",
@@ -691,7 +691,7 @@ sub usage {
 
   select STDERR if $exitcode; # write to STDERR if exitcode is error
 
-  print "SYNOPSIS\n  Faster de novo assembly pipeline based around Spades\n";
+  print "SYNOPSIS\n  De novo assembly pipeline for Illumina paired reads\n";
   print "USAGE\n  $EXE [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz\n";
   foreach (@Options) {
     if (ref) {
