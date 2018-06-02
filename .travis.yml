@@ -13,6 +13,7 @@ addons:
             - libstdc++6
             - liblzma5
             - libbz2-1.0
+            - zlib1g-dev
             
 install:
     - "export PATH=$PWD/.travis:$PWD/bin:$PATH"
@@ -21,6 +22,7 @@ install:
     - "echo $HOME"
     - "echo $PATH"
     - "find deps -executable -type f"
+    - "ldd $PWD/.travis/skesa"
 
 script:
     - "shovill --version"

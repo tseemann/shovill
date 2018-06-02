@@ -44,6 +44,7 @@ SKESA=skesa
 echo "* $SKESA"
 mkdir -p $SKESA
 $WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.centos6.9
+#$WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.centos7.4
 chmod +x $SKESA/skesa
 PATH=$HERE/$SKESA:$PATH
 
