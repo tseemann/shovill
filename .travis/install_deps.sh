@@ -43,7 +43,7 @@ PATH=$HERE/seqtk-$SEQTKVER:$PATH
 SKESA=skesa
 echo "* $SKESA"
 mkdir -p $SKESA
-$WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.static
+$WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.centos6.9
 chmod +x $SKESA/skesa
 PATH=$HERE/$SKESA:$PATH
 
