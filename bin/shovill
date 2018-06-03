@@ -172,11 +172,16 @@ else {
   msg("No read depth reduction requested or necessary.");
 }
 
+# Set RAM for Java apps to match --ram
+my $javaopt = "-Xmx${ram}g";
+msg("Appending $javaopt to _JAVA_OPTIONS");
+$ENV{'_JAVA_OPTIONS'} .= " $javaopt";
+
 # Get reads: if trimming, trim the originals into this folder, otherwise symlink
 if ($trim) {
   msg("Trimming reads");
   run_cmd(
-    "_JAVA_OPTIONS=-Xmx${ram}g trimmomatic PE -threads $cpus -phred33".
+    "trimmomatic PE -threads $cpus -phred33".
     " \Q$R1\E \Q$R2\E R1.fq.gz /dev/null R2.fq.gz /dev/null $TRIMOPT",
     "trimmomatic"
   );
@@ -327,7 +332,7 @@ unless ($nocorr) {
   run_cmd("samtools index $BAM", "samtools-index");
 
   msg("Correcting errors in $asm");
-  run_cmd("_JAVA_OPTIONS=-Xmx${ram}g pilon --genome $asm --frags $BAM"
+  run_cmd("pilon --genome $asm --frags $BAM"
          ." --fix bases --output pilon --threads $cpus --changes --mindepth 0.25", "pilon");
   move($asm, "$asm.uncorrected");
   move("pilon.fasta", $asm);
