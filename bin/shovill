@@ -62,7 +62,7 @@ if ($ENV{TRAVIS} eq 'true') {
 }
 
 # Options
-my(@Options, $debug, $version,
+my(@Options, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $R1, $R2, $assembler, $opts, $ram, $depth,
              $nocorr, $trim, $nostitch, $noreadcorr,
@@ -663,7 +663,6 @@ sub setOptions {
     {OPT=>"help",       VAR=>\&usage,                    DESC=>"This help"},
     {OPT=>"version!",   VAR=>\&version,                  DESC=>"Print version and exit"},
     {OPT=>"check!",     VAR=>\&check_deps,               DESC=>"Check dependencies are installed"},
-#    {OPT=>"debug!",     VAR=>\$debug,     DEFAULT=>0,    DESC=>"Debug info"},
     "INPUT",
     {OPT=>"R1=s",       VAR=>\$R1,        DEFAULT=>'',   DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",       VAR=>\$R2,        DEFAULT=>'',   DESC=>"Read 2 FASTQ"},
@@ -678,10 +677,10 @@ sub setOptions {
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '', DESC=>"Fast temporary directory"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>1,    DESC=>"Number of CPUs to use (0=ALL)"},
-    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>4,    DESC=>"Try to keep RAM usage below this many GB"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || 1, DESC=>"Number of CPUs to use (0=ALL)"},
+    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || 4,  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
-    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>'spades',   DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
+    {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',        DESC=>"K-mers to use <blank=AUTO>"},
     {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',        DESC=>"Extra assembler options eg. spades: --plasmid --sc ..."},
     "MODULES",

@@ -212,6 +212,18 @@ Read error correction | _default_ | `--noreadcorr`
 Read stitching/overlap | _default_ | `--nostitch`
 Contig correction | _default_ | `--nocorr`
 
+## Environment variables recognised
+
+These env-vars will be used as defaults instead of the built-in defaults.
+You can use the normal command line option to override them still.
+
+Variable | Option | Default
+---------|--------|------------
+`$SHOVILL_CPUS` | `--cpus` | 1
+`$SHOVILL_RAM` | `--ram` | 4
+`$SHOVILL_ASSEMBLER` | `--assembler` | `spades`
+`$TMPDIR` | `--tmpdir` | `/tmp`
+
 ## FAQ
 
 * _Does `shovill` accept single-end reads?_
@@ -221,6 +233,12 @@ Contig correction | _default_ | `--nocorr`
 * _Do you support long reads from Pacbio or Nanopore?_
 
   No, this is strictly an Illumina based pipeline.
+
+* _Why does Shovill crash?_
+
+  Shovill has a lot of dependencies. If any dependencies
+  are not installed correctly it will die. Spades also
+  doesn't handle --cpus > 16 very well - try giving more RAM.
 
 ## Feedback
 
