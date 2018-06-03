@@ -106,6 +106,17 @@ exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 # Check deps
 check_deps();
 
+# Check spades version
+my $stitch_arg = '--s2';
+if ($assembler eq 'spades' and !$nostitch) {
+  msg("Checking if $assembler supports new stitched read library option instead of $stitch_arg");
+  my $old = system("spades.py --help 2>&1 | grep -- '^--merged' > /dev/null");
+  if (! $old) {
+    $stitch_arg = '--pe1-m';
+    msg("Yes, it supports $stitch_arg");
+  }
+}
+
 # Make output folder
 make_folder($outdir);
 $outdir = File::Spec->rel2abs($outdir);
@@ -119,6 +130,7 @@ msg("Using tempdir: $tmpdir");
 msg("Changing into folder: $outdir");
 my $cwd = getcwd();
 chdir($outdir);
+
 # Switch to permanent logfile
 my $real_log = "$EXE.log";
 copy($LOGFILE, $real_log);
@@ -254,7 +266,7 @@ remove_tree($asmdir) if -d $asmdir;
 
 if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
-  $opts .= " --s2 $SE" if $SE;
+  $opts .= " $stitch_arg $SE" if $SE;
   run_cmd(
     "spades.py --pe1-1 $PE1 --pe1-2 $PE2"
    ." --only-assembler --threads $cpus --memory $ram_int"
