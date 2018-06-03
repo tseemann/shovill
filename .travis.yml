@@ -22,8 +22,8 @@ install:
     - "echo $HOME"
     - "echo $PATH"
     - "find deps -executable -type f"
-    - "ldd $HOME/deps/skesa/skesa"
-    - "ldd $HOME/deps/velvet/velveth"
+    - "ldd $PWD/deps/skesa/skesa"
+    - "ldd $PWD/deps/velvet/velveth"
 
 script:
     - "shovill --version"
