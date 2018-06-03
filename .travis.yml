@@ -22,7 +22,7 @@ install:
     - "echo $HOME"
     - "echo $PATH"
     - "find deps -executable -type f"
-    - "ldd $PWD/.travis/skesa"
+    - "ldd $PWD/.travis/skesa/skesa"
 
 script:
     - "shovill --version"
