@@ -55,6 +55,12 @@ my %VERSION = (
   'sysctl'      => 'uname -rs',
 );
 
+# some tools are just too hard to put into TRAVIS...
+if ($ENV{TRAVIS} eq 'true') {
+  msg("Running in TRAVIS, will remove skesa assembler");
+  delete $VERSION{'skesa'};
+}
+
 # Options
 my(@Options, $debug, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
