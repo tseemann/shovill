@@ -197,6 +197,12 @@ faster than SPAdes, but give lesser assemblies. If you use SKESA you can probabl
 `--noreadcorr` and `--nocoor` because it has some of that functionality inbuilt and is
 conservative.
 
+### --opts
+If you want to provide some assembler-specific parameters you can use the `--opts`
+parameter. Make sure you quote the parameters so they get passed as a single string
+eg. For `--assembler spades` you might use 
+`--opts "--sc --untrusted-contigs similar_genome.fasta"` or `--opts '--sc'`.
+
 ### --kmers
 A series of kmers are chosen based on the read length distribution. You can override
 this with this option.
