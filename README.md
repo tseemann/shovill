@@ -66,7 +66,7 @@ Using Homebrew will install all the dependencies for you:
 ### Conda
 
 ```
-conda -c bioconda install shovill
+conda install -c bioconda shovill
 shovill --check
 ```
 Big thanks to [@slugger70](https://github.com/slugger70) who tirelessly handles 
