@@ -2,20 +2,26 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # Shovill
-Faster SPAdes (or better SKESA/Megahit/Velvet) assembly of Illumina reads 
+
+Assemble bacterial isolate genomes from Illumina paired-end reads
 
 ## Introduction
 
 The SPAdes genome assembler has become the *de facto* standard *de novo* genome assembler
 for Illumina whole genome sequencing data of bacteria and other small microbes. SPAdes
-was a major improvement over previous assemblers like Velvet, but it can be very slow to run
-and does not handle overlapping paired-end reads well.
+was a major improvement over previous assemblers like Velvet, but some of its components
+can be slow and it traditionally did not handle overlapping paired-end reads well.
 
-Shovill is a pipeline which uses SPAdes at its core, but alters the steps before and after
-the primary assembly step to get similar results in less time.
+Shovill is a pipeline which uses SPAdes at its core, but alters the steps
+before and after the primary assembly step to get similar results in less
+time. Shovill also supports other assemblers like SKESA, Velvet and
+Megahit, so you can take advantage of the pre- and post-processing the
+Shovill provides with those too.
 
-Shovill also supports other assemblers like SKESA and Megahit, so you can take advantage
-of the pre- and post-processing the Shovill provides with those too.
+:warning: Shovill is for isolate data only, primarily small haploid organisms.
+It will *NOT* work on metagenomes or larger genomes.
+Please use [Megahit](https://github.com/voutcn/megahit) directly instead.
+
 
 ## Main steps
 
@@ -245,6 +251,12 @@ Variable | Option | Default
   Shovill has a lot of dependencies. If any dependencies
   are not installed correctly it will die. Spades also
   doesn't handle --cpus > 16 very well - try giving more RAM.
+
+* _Can I assemle metagenomes with Shovill?_
+
+  No. Please use dedicated tools like Minia 3.x or Megahit.
+  Shovill uses the estimated genome size for many dynamic
+  settings related to read error correction, read subsampling etc.
 
 ## Feedback
 
