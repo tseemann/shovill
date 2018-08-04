@@ -24,10 +24,11 @@ my $LOGFILE = $LOGTMP->filename;
 my $MIN_K = 31;               # sensible minimum, although prefer higher
 my $MAX_K = 127;              # maximum for most assemblers
 my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
-my $MINBQ = 3;                # for trimming and stats
+my $MIN_BQ = 3;               # for trimming and stats and pilon
+my $MIN_MQ = 60;              # for pilon
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 1;           # for all tools
-my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MINBQ TRAILING:$MINBQ MINLEN:30 TOPHRED33";
+my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
@@ -49,6 +50,7 @@ my %VERSION = (
   'velvetg'     => 'velvetg 2>&1 | grep Version',
   'bwa'         => 'bwa 2>&1 | grep Version:',
   'samtools'    => 'samtools 2>&1 | grep Version:',
+  'samclip'     => 'samclip --version 2>&1',
   'java'        => 'java -version 2>&1 | grep version',
   'pilon'       => 'pilon --version 2>&1 | grep -v _JAVA',
   'vmstat'      => 'vmstat --version 2>&1',
@@ -327,12 +329,13 @@ unless ($nocorr) {
   # use original reads here, to help fix any errors from overlapping PE stitching
   my $sort_ram = int($half_ram * 1024 / $lesscpus); # RAM per thread, in Mb
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
+         ." | samclip"
          ." | samtools sort --threads $lesscpus -m ${sort_ram}m"
          ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)", "bwa+samtools-sort");
   run_cmd("samtools index $BAM", "samtools-index");
 
   msg("Correcting errors in $asm");
-  run_cmd("pilon --genome $asm --frags $BAM"
+  run_cmd("pilon --genome $asm --frags $BAM --minmq $MIN_MQ --minqual $MIN_BQ"
          ." --fix bases --output pilon --threads $cpus --changes --mindepth 0.25", "pilon");
   move($asm, "$asm.uncorrected");
   move("pilon.fasta", $asm);
@@ -494,8 +497,8 @@ sub read_stats {
   my($R1) = @_;
   my $sf = File::Temp->new();
   my $stat;
-  # we use MINBQ to get an idea of what it would be after quality clipping
-  run_cmd("seqtk fqchk -q$MINBQ \Q$R1\E >".$sf->filename);
+  # we use MIN_BQ to get an idea of what it would be after quality clipping
+  run_cmd("seqtk fqchk -q$MIN_BQ \Q$R1\E >".$sf->filename);
   my @row = read_lines($sf->filename);
   unlink $sf->filename;
 #  msg($row[0]);
