@@ -12,7 +12,7 @@ use Cwd qw(realpath getcwd);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0-pre1";
+my $VERSION = "1.0.pre-20180804";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -38,7 +38,7 @@ my %VERSION = (
   'seqtk'       => 'seqtk 2>&1 | grep Version',
   'pigz'        => 'pigz --version 2>&1',
   'mash'        => 'mash --version 2>&1',
-  'trimmomatic' => 'trimmomatic -version 2>&1',
+  'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
   'flash'       => 'flash --version 2>&1 | grep FLASH',
   'spades.py'   => 'spades.py  --version 2>&1',
@@ -50,7 +50,7 @@ my %VERSION = (
   'bwa'         => 'bwa 2>&1 | grep Version:',
   'samtools'    => 'samtools 2>&1 | grep Version:',
   'java'        => 'java -version 2>&1 | grep version',
-  'pilon'       => 'pilon --version 2>&1',
+  'pilon'       => 'pilon --version 2>&1 | grep -v _JAVA',
   'vmstat'      => 'vmstat --version 2>&1',
   'sysctl'      => 'uname -rs',
 );
