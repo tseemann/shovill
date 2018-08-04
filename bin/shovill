@@ -53,8 +53,6 @@ my %VERSION = (
   'samclip'     => 'samclip --version 2>&1',
   'java'        => 'java -version 2>&1 | grep version',
   'pilon'       => 'pilon --version 2>&1 | grep -v _JAVA',
-  'vmstat'      => 'vmstat --version 2>&1',
-  'sysctl'      => 'uname -rs',
 );
 
 # some tools are just too hard to put into TRAVIS...
@@ -455,7 +453,6 @@ exit(0);
 sub check_deps {
   my($exit) = @_;
   # Check we have the required binaries
-  delete $VERSION{ $OSNAME eq 'linux' ? 'sysctl' : 'vmstat' };
   my @exe = sort keys %VERSION;
   #push @exe, ($OSNAME eq 'linux' ? 'vmstat' : 'sysctl');
   for my $exe (@exe) {
@@ -590,13 +587,13 @@ sub num_cpus {
 sub avail_ram_gb {
   my $ram=0;
   if ($^O eq 'linux') {
-    my($line) = grep { m/total memory$/ } qx(vmstat -s);
-    $line =~ m/(\d+)/;
+    my($line) = grep { m/^MemTotal/ } qx(cat /proc/meminfo);
+    $line =~ m/(\d+)/ or err("Could not parse MemTotal from /proc/meminfo");
     $ram = $1 / 1024 / 1024; # convert KB to GB
   }
   elsif ($^O eq 'darwin') {    # macOS
     my($line) = qx(sysctl hw.memsize);
-    $line =~ m/(\d+)/;
+    $line =~ m/(\d+)/ or err("Could not parse RAM from sysctl hw.memsize");
     $ram = $1 / 1024 / 1024 / 1024; # convert Bytes to GB
   }
   $ram && $ram >= $MIN_RAM_GB or err("Could not determine available RAM");
