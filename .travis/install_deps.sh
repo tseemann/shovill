@@ -7,13 +7,17 @@ WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
-SAMTOOLSVER=1.8
+SAMTOOLSVER=1.9
 SAMTOOLS=samtools-$SAMTOOLSVER
 echo "* $SAMTOOLS"
 $WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
 $UNTAR $SAMTOOLS.tar.bz2
 (cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
 PATH=$HERE/$SAMTOOLS/bin:$PATH
+
+$WGET https://raw.githubusercontent.com/tseemann/samclip/master/samclip
+chmod +x samclip
+mv samclip $HERE/$SAMTOOLS/bin
 
 BWAVER=0.7.17
 BWA=bwa-$BWAVER
