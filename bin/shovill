@@ -9,6 +9,7 @@ use File::Temp;
 use List::Util qw(min max);
 use English qw(-no_match_vars);
 use Cwd qw(realpath getcwd);
+use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
@@ -350,6 +351,7 @@ else {
 my $ncontigs = 0;
 my $nbases = 0;
 my $seq = read_fasta($asm);
+my $metadata = "sw=$EXE-$asmdir/$VERSION date=".strftime("%Y%m%d",localtime);
 my %len = map { ( $_ => length($seq->{$_}) ) } (keys %{$seq});
 for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
   # spades  >NODE_1_length_114969_cov_29.8803_pilon
@@ -376,7 +378,7 @@ for my $id (sort { $len{$b} <=> $len{$a} } keys %{$seq}) {
     $cov = sprintf "%.1f", $cov;
     my $corr = $changes->{$id} || 0;
     # $id =~ s/_pilon$// unless $nocorr;
-    my $newid = sprintf "$namefmt len=$len cov=$cov corr=$corr origname=$id", $ncontigs;
+    my $newid = "$namefmt len=$len cov=$cov corr=$corr origname=$id $metadata";
     $seq->{$newid} = $seq->{$id};
     delete $seq->{$id};
   }
