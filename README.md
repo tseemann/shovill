@@ -52,7 +52,7 @@ shovill.log  spades.fasta
 
 % head -n 4 out/contigs.fa
 
->contig00001 len=52653 cov=32.7 corr=1 origname=NODE_1_length_52642_cov_32.67243_pilon
+>contig00001 len=52653 cov=32.7 corr=1 origname=NODE_3 date=20180327 sw=shovill/1.0.1
 ATAACGCCCTGCTGGCCCAGGTCATTTTATCCAATCTGGACCTCTCGGCTCGCTTTGAAGAAT
 GAGCGAATTCGCCGTTCAGTCCGCTGGACTTCGGACTTAAAGCCGCCTAAAACTGCACGAACC
 ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
@@ -126,8 +126,8 @@ This is most important output file - the final, corrected assembly.
 It contains entries like this:
 
 ```
->contig00001 len=263154 cov=8.9 corr=1 origname=NODE_1_length_263154_cov_8.86703_pilon
->contig00041 len=339 cov=8.8 corr=0 origname=NODE_41_length_339_cov_8.77027_pilon
+>contig00001 len=263154 cov=8.9 corr=1 origname=NODE_1 date=20180327 sw=shovill/0.9
+>contig00041 len=339 cov=8.8 corr=0 origname=NODE_41 date=20180327 sw=shovill/0.9
 ```
 
 The sequence IDs are named as per the `--namefmt` option, and the comment field
@@ -139,6 +139,8 @@ Pair | Meaning
 `cov`  | Average k-mer coverage as reported by assembler
 `corr` | Number of post-assembly corrections (unless `--nocorr` used)
 `origname` | The original name of the contig (before applying `--namefmt`)
+`date` | YYYYMMDD date when this contig was assembled
+`sw` | `shovill-engine/version` where engine is the `--assembler` chosen
 
 ## Advanced options
 
@@ -231,8 +233,8 @@ You can use the normal command line option to override them still.
 
 Variable | Option | Default
 ---------|--------|------------
-`$SHOVILL_CPUS` | `--cpus` | 1
-`$SHOVILL_RAM` | `--ram` | 4
+`$SHOVILL_CPUS` | `--cpus` | 16
+`$SHOVILL_RAM` | `--ram` | 32
 `$SHOVILL_ASSEMBLER` | `--assembler` | `spades`
 `$TMPDIR` | `--tmpdir` | `/tmp`
 
@@ -252,7 +254,7 @@ Variable | Option | Default
   are not installed correctly it will die. Spades also
   doesn't handle --cpus > 16 very well - try giving more RAM.
 
-* _Can I assemle metagenomes with Shovill?_
+* _Can I assemble metagenomes with Shovill?_
 
   No. Please use dedicated tools like Minia 3.x or Megahit.
   Shovill uses the estimated genome size for many dynamic
@@ -274,3 +276,4 @@ Not published yet.
 ## Authors
 
 * Torsten Seemann (with Jason Kwong, Simon Gladman, Anders Goncalves da Silva)
+
