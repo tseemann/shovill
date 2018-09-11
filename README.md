@@ -146,6 +146,10 @@ Pair | Meaning
 ## Advanced options
 
 ```
+SYNOPSIS
+  De novo assembly pipeline for Illumina paired reads
+USAGE
+  shovill [options] --outdir DIR --R1 R1.fq.gz --R2 R2.fq.gz
 GENERAL
   --help          This help
   --version       Print version and exit
@@ -164,12 +168,12 @@ OUTPUT
   --keepfiles     Keep intermediate files (default: OFF)
 RESOURCES
   --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
-  --cpus N        Number of CPUs to use (0=ALL) (default: 0)
-  --ram n.nn      Try to keep RAM usage below this many GB (default: 8)
+  --cpus N        Number of CPUs to use (0=ALL) (default: 16)
+  --ram n.nn      Try to keep RAM usage below this many GB (default: 32)
 ASSEMBLER
-  --assembler XXX Assembler: spades skesa megahit velvet (default: 'skesa')
+  --assembler XXX Assembler: skesa velvet megahit spades (default: 'spades')
+  --opts XXX      Extra assembler options in quotes eg. spades: "--untrusted-contigs locus.fna" ... (default: '')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
-  --opts XXX      Extra assembler options eg. spades: --plasmid --sc ... (default: '')
 MODULES
   --trim          Enable adaptor trimming (default: OFF)
   --noreadcorr    Disable read error correction (default: OFF)
@@ -277,4 +281,3 @@ Not published yet.
 ## Authors
 
 * Torsten Seemann (with Jason Kwong, Simon Gladman, Anders Goncalves da Silva)
-
