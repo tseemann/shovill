@@ -22,7 +22,6 @@ install:
     - "echo $HOME"
     - "echo $PATH"
     - "find deps -executable -type f"
-    - "ldd $PWD/deps/skesa/skesa"
 
 script:
     - "shovill --version"
