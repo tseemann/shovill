@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0.4";
+my $VERSION = "1.0.5";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -28,7 +28,7 @@ my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
 my $MIN_BQ = 3;               # for trimming and stats and pilon
 my $MIN_MQ = 60;              # for pilon
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
-my $MIN_RAM_GB = 1;           # for all tools
+my $MIN_RAM_GB = 4;           # for all tools
 my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
@@ -99,6 +99,7 @@ $ram >= $MIN_RAM_GB or err("Invalid --ram $ram - need at least $MIN_RAM_GB");
 $ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
+$half_ram > 0 or err("Half RAM is too small, please set --ram > $ram");
 my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
@@ -599,7 +600,10 @@ sub avail_ram_gb {
     $line =~ m/(\d+)/ or err("Could not parse RAM from sysctl hw.memsize");
     $ram = $1 / 1024 / 1024 / 1024; # convert Bytes to GB
   }
-  $ram && $ram >= $MIN_RAM_GB or err("Could not determine available RAM");
+  else {
+    err("Do not know how to determine RAM on platform:", $^O);
+  }
+  $ram && $ram > 0 or err("Problem determining available RAM");
   return sprintf("%.2f", $ram);
 }
 
