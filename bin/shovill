@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0.6";
+my $VERSION = "1.0.7";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -100,7 +100,7 @@ $ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
 $half_ram > 0 or err("Half RAM is too small, please set --ram > $ram");
-my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
+my $sort_cpus = max( 1, int(0.25 * $cpus) );  # for samtools sort in pipe
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
@@ -329,10 +329,10 @@ unless ($nocorr) {
   run_cmd("bwa index $asm", "bwa-index");
   run_cmd("samtools faidx $asm", "faidx");
   # use original reads here, to help fix any errors from overlapping PE stitching
-  my $sort_ram = int($half_ram * 1024 / $lesscpus); # RAM per thread, in Mb
+  my $sort_ram = int($half_ram * 1024 / $sort_cpus); # RAM per thread, in Mb
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
          ." | samclip --ref ${asm}.fai"
-         ." | samtools sort --threads $lesscpus -m ${sort_ram}m"
+         ." | samtools sort --threads $sort_cpus -m ${sort_ram}m"
          ." --reference $asm -T $tmpdir -o $BAM)", "bwa+samtools-sort");
   run_cmd("samtools index $BAM", "samtools-index");
 
@@ -690,8 +690,8 @@ sub setOptions {
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '', DESC=>"Fast temporary directory"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || 16, DESC=>"Number of CPUs to use (0=ALL)"},
-    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || 32,  DESC=>"Try to keep RAM usage below this many GB"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || 8, DESC=>"Number of CPUs to use (0=ALL)"},
+    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || 16,  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
     {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: \"--untrusted-contigs locus.fna\" ..."},
