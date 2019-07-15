@@ -27,7 +27,7 @@ $UNTAR $BWA.tar.bz2
 $MAKE -C $BWA 
 PATH=$HERE/$BWA:$PATH
 
-MASHVER=2.0
+MASHVER=2.1.1
 MASH="mash-Linux64-v$MASHVER"
 MASHTAR="$MASH.tar"
 echo "* $MASH"
@@ -35,7 +35,7 @@ $WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
 $UNTAR $MASHTAR
 PATH=$HERE/$MASH:$PATH
 
-SEQTKVER=1.2
+SEQTKVER=1.3
 SEQTK=v$SEQTKVER.tar.gz
 echo "* seqtk $SEQTK"
 $WGET https://github.com/lh3/seqtk/archive/$SEQTK
@@ -67,7 +67,7 @@ PATH=$HERE/$MEGAHIT:$PATH
 #rm -fv kmc_dump kmc_tools
 #PATH=$HERE:$PATH
 
-PILONVER=1.22
+PILONVER=1.23
 JAR=pilon-$PILONVER.jar
 PILON=pilon
 PILONSH=$PILON/$PILON
@@ -80,7 +80,7 @@ cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
 # http://cab.spbu.ru/files/release3.12.0/SPAdes-3.12.0-Linux.tar.gz
-SPADESVER=3.12.0
+SPADESVER=3.13.1
 SPADES=SPAdes-$SPADESVER-Linux
 echo "* $SPADES"
 $WGET http://cab.spbu.ru/files/release$SPADESVER/$SPADES.tar.gz
@@ -101,7 +101,7 @@ $UNTAR $FLASH.tar.gz
 $MAKE -C $FLASH 
 PATH=$HERE/$FLASH:$PATH
 
-TRIMVER=0.36
+TRIMVER=0.38
 TRIM=Trimmomatic-$TRIMVER.zip
 TRIMDIR=Trimmomatic-$TRIMVER
 TRIMSH=$TRIMDIR/trimmomatic
