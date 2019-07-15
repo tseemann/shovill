@@ -89,7 +89,6 @@ $outdir or err("Please specify output folder with --outdir");
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
-sub is_integer { return $_[0] =~ m/^(\d+)$/ if defined $_[0]; }
 $gsize = $gsize ? guess_bp($gsize) : 0;
 $cpus ||= $CORES;  # if cpus==0 use all available
 $cpus > 0 or err("Invalid --cpus $cpus");
