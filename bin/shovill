@@ -89,7 +89,7 @@ $outdir or err("Please specify output folder with --outdir");
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
-$gsize = $gsize ? guess_bp($gsize) : 0;
+$gsize = $gsize ? parse_genome_size($gsize) : 0;  # 0 = autodetect later
 $cpus ||= $CORES;  # if cpus==0 use all available
 $cpus > 0 or err("Invalid --cpus $cpus");
 $minlen >= 0 or err("Invalid --minlen $minlen");
@@ -530,7 +530,7 @@ sub make_folder {
 }
 
 #----------------------------------------------------------------------
-sub guess_bp {
+sub parse_genome_size {
   my($s) = @_;
   my %mult = ('G'=>1E9,'M'=>1E6,'K'=>1E3);
   $s =~ m/^([\d\.]+)([GMK])?$/i or die "Couldn't parse '$s'";
