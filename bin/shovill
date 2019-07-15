@@ -247,7 +247,7 @@ my $SE  = "";
 my $PE1 = $COR1;
 my $PE2 = $COR2;
 unless ($nostitch) {
-  msg("Overlapping/stitcing PE reads with 'FLASH'");
+  msg("Overlapping/stitching PE reads with 'FLASH'");
   # WARNING: An unexpectedly high proportion of combined pairs (13.03%)
   # overlapped by more than 80 bp, the --max-overlap (-M) parameter.
   #my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
