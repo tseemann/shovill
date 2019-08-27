@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0.4";
+my $VERSION = "1.0.7";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -28,7 +28,7 @@ my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
 my $MIN_BQ = 3;               # for trimming and stats and pilon
 my $MIN_MQ = 60;              # for pilon
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
-my $MIN_RAM_GB = 1;           # for all tools
+my $MIN_RAM_GB = 4;           # for all tools
 my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
@@ -89,8 +89,7 @@ $outdir or err("Please specify output folder with --outdir");
 -r $R1 or err("Can't read --R1 $R1");
 -r $R2 or err("Can't read --R2 $R2");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
-sub is_integer { return $_[0] =~ m/^(\d+)$/ if defined $_[0]; }
-$gsize = $gsize ? guess_bp($gsize) : 0;
+$gsize = $gsize ? parse_genome_size($gsize) : 0;  # 0 = autodetect later
 $cpus ||= $CORES;  # if cpus==0 use all available
 $cpus > 0 or err("Invalid --cpus $cpus");
 $minlen >= 0 or err("Invalid --minlen $minlen");
@@ -99,7 +98,8 @@ $ram >= $MIN_RAM_GB or err("Invalid --ram $ram - need at least $MIN_RAM_GB");
 $ram <= $MEMORY or err("Set --ram to $ram but machine only has $MEMORY GB");
 my $ram_int = int($ram);  # an integer form of RAM, rounded down (some progs only accept integers)
 my $half_ram = int($ram / 2);
-my $lesscpus = min(1, max(4, int($cpus/4)));  # for samtools sort in pipe
+$half_ram > 0 or err("Half RAM is too small, please set --ram > $ram");
+my $sort_cpus = max( 1, int(0.25 * $cpus) );  # for samtools sort in pipe
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
@@ -246,7 +246,7 @@ my $SE  = "";
 my $PE1 = $COR1;
 my $PE2 = $COR2;
 unless ($nostitch) {
-  msg("Overlapping/stitcing PE reads with 'FLASH'");
+  msg("Overlapping/stitching PE reads with 'FLASH'");
   # WARNING: An unexpectedly high proportion of combined pairs (13.03%)
   # overlapped by more than 80 bp, the --max-overlap (-M) parameter.
   #my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
@@ -328,11 +328,11 @@ unless ($nocorr) {
   run_cmd("bwa index $asm", "bwa-index");
   run_cmd("samtools faidx $asm", "faidx");
   # use original reads here, to help fix any errors from overlapping PE stitching
-  my $sort_ram = int($half_ram * 1024 / $lesscpus); # RAM per thread, in Mb
+  my $sort_ram = int($half_ram * 1024 / $sort_cpus); # RAM per thread, in Mb
   run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm R1.fq.gz R2.fq.gz"
          ." | samclip --ref ${asm}.fai"
-         ." | samtools sort --threads $lesscpus -m ${sort_ram}m"
-         ." --reference $asm -T $tmpdir/samtools.$PROCESS_ID -o $BAM)", "bwa+samtools-sort");
+         ." | samtools sort --threads $sort_cpus -m ${sort_ram}m"
+         ." --reference $asm -T $tmpdir -o $BAM)", "bwa+samtools-sort");
   run_cmd("samtools index $BAM", "samtools-index");
 
   msg("Correcting errors in $asm");
@@ -530,7 +530,7 @@ sub make_folder {
 }
 
 #----------------------------------------------------------------------
-sub guess_bp {
+sub parse_genome_size {
   my($s) = @_;
   my %mult = ('G'=>1E9,'M'=>1E6,'K'=>1E3);
   $s =~ m/^([\d\.]+)([GMK])?$/i or die "Couldn't parse '$s'";
@@ -599,7 +599,10 @@ sub avail_ram_gb {
     $line =~ m/(\d+)/ or err("Could not parse RAM from sysctl hw.memsize");
     $ram = $1 / 1024 / 1024 / 1024; # convert Bytes to GB
   }
-  $ram && $ram >= $MIN_RAM_GB or err("Could not determine available RAM");
+  else {
+    err("Do not know how to determine RAM on platform:", $^O);
+  }
+  $ram && $ram > 0 or err("Problem determining available RAM");
   return sprintf("%.2f", $ram);
 }
 
@@ -686,8 +689,8 @@ sub setOptions {
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '', DESC=>"Fast temporary directory"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || 16, DESC=>"Number of CPUs to use (0=ALL)"},
-    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || 32,  DESC=>"Try to keep RAM usage below this many GB"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || 8, DESC=>"Number of CPUs to use (0=ALL)"},
+    {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || 16,  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
     {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: \"--untrusted-contigs locus.fna\" ..."},
