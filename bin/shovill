@@ -174,7 +174,7 @@ else {
 }
 
 # Set RAM for Java apps to match --ram
-my $javaopt = "-Xmx${ram}g";
+my $javaopt = "-Xmx${ram_int}g";
 msg("Appending $javaopt to _JAVA_OPTIONS");
 $ENV{'_JAVA_OPTIONS'} .= " $javaopt";
 
