@@ -8,7 +8,7 @@ use File::Copy;
 use File::Temp;
 use List::Util qw(min max);
 use English qw(-no_match_vars);
-use Cwd qw(realpath getcwd);
+use Cwd qw(getcwd abs_path);
 use POSIX qw(strftime);
 
 # Globals
@@ -17,7 +17,7 @@ my $VERSION = "1.0.8";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
-my $APPDIR = realpath( "$FindBin::RealBin/.." );
+my $APPDIR = abs_path( "$FindBin::RealBin/.." );
 my $ADAPTERS = "$APPDIR/db/trimmomatic.fa"; # hard-code this for Conda etc.
 my $LOGTMP = File::Temp->new();
 my $LOGFILE = $LOGTMP->filename;
@@ -120,9 +120,9 @@ if ($assembler eq 'spades' and !$nostitch) {
 
 # Make output folder
 make_folder($outdir);
-$outdir = File::Spec->rel2abs($outdir);
-$R1 = File::Spec->rel2abs($R1);
-$R2 = File::Spec->rel2abs($R2);
+$outdir = abs_path($outdir);
+$R1 = abs_path($R1);
+$R2 = abs_path($R2);
 
 # Ensure we have a tempdir
 $tmpdir ||= File::Temp->newdir(CLEANUP=>1);
