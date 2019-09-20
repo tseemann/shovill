@@ -689,7 +689,7 @@ sub setOptions {
     {OPT=>"keepfiles!", VAR=>\$keepfiles, DEFAULT=>0,    DESC=>"Keep intermediate files"},
     "RESOURCES",
     {OPT=>"tmpdir=s",   VAR=>\$tmpdir,    DEFAULT=>$ENV{TMPDIR} || '', DESC=>"Fast temporary directory"},
-    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || $CORES, DESC=>"Number of CPUs to use (0=ALL)"},
+    {OPT=>"cpus=i",     VAR=>\$cpus,      DEFAULT=>$ENV{SHOVILL_CPUS} || min(8,$CORES), DESC=>"Number of CPUs to use (0=ALL)"},
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || min(16,$MEMORY),  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
