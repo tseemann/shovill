@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0.8";
+my $VERSION = "1.0.9";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
