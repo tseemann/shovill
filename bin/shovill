@@ -208,8 +208,8 @@ if ($kmers) {
   @kmers = split m/\s*\D+\s*/, $kmers;
   my $arl = $stat->{'avg_len'};
   for my $k (@kmers) {
-    $k <= $MAX_K or err("k-mer $k to bigger than maximum allowed $MAX_K");
-    $k >= $MIN_K or err("k-mer $k to smaller than minimum recommended $MIN_K");
+    $k <= $MAX_K or err("k-mer $k is bigger than maximum allowed $MAX_K");
+    $k >= $MIN_K or err("k-mer $k is smaller than minimum recommended $MIN_K");
     $k < $arl or err("k-mer $k is greater than average read length $arl");
   }
 }
