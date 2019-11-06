@@ -73,11 +73,11 @@ Using Homebrew will install all the dependencies for you:
 ### Conda
 
 ```
-conda install  -c conda-forge -c bioconda -c defaults  shovill
+conda install -c conda-forge -c bioconda -c defaults shovill
 shovill --check
 ```
-Big thanks to [@slugger70](https://github.com/slugger70) who tirelessly handles 
-[Bioconda](https://bioconda.github.io/) packaging for all my tools.
+Using [Bioconda](https://bioconda.github.io/)
+will install all the dependencies for you on MacOS and Linux.
 
 ### Docker
 
@@ -251,7 +251,7 @@ Variable | Option | Default
 
 * _Do you support long reads from Pacbio or Nanopore?_
 
-  No, this is strictly an Illumina based pipeline.
+  No, this is strictly for Illumina paired-end reads only.
 
 * _Why does Shovill crash?_
 
@@ -278,6 +278,16 @@ to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
 
 Not published yet.
 
-## Authors
+## Author
 
-* Torsten Seemann (with Jason Kwong, Simon Gladman, Anders Goncalves da Silva)
+* Torsten Seemann
+* Web: https://tseemann.github.io/
+* Twitter: [@torstenseemann](https://twitter.com/torstenseemann)
+* Blog: [The Genome Factory](https://thegenomefactory.blogspot.com/)
+
+## Contributors
+
+* Jason Kwong
+* Simon Gladman
+* Anders Goncalves da Silva
+
