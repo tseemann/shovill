@@ -105,6 +105,7 @@ You will need to install all the dependencies manually:
 * pigz
 * Pilon (Java)
 * Trimmomatic (Java)
+* samclip
 
 ## Output files
 
