@@ -105,17 +105,6 @@ exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 # Check deps
 check_deps();
 
-# Check spades version
-my $stitch_arg = '--s2';
-if ($assembler eq 'spades' and !$nostitch) {
-  msg("Checking if $assembler supports new stitched read library option instead of $stitch_arg");
-  my $old = system("spades.py --help 2>&1 | grep -- '^--merged' > /dev/null");
-  if (! $old) {
-    $stitch_arg = '--pe1-m';
-    msg("Yes, it supports $stitch_arg");
-  }
-}
-
 # Make output folder
 make_folder($outdir);
 $outdir = abs_path($outdir);
