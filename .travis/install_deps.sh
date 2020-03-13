@@ -62,7 +62,7 @@ MEGAHITTAR=$MEGAHIT.tar.gz
 echo "* $MEGAHIT"
 $WGET https://github.com/voutcn/megahit/releases/download/v$MEGAHITVER/$MEGAHITTAR
 $UNTAR $MEGAHITTAR
-PATH=$HERE/$MEGAHIT:$PATH
+PATH=$HERE/$MEGAHIT/bin:$PATH
 
 KMCVER=3.1.1
 KMC=KMC${KMCVER}.linux.tar.gz
