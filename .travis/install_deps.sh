@@ -7,7 +7,7 @@ WGET="wget --quiet"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
-SAMTOOLSVER=1.9
+SAMTOOLSVER=1.10
 SAMTOOLS=samtools-$SAMTOOLSVER
 echo "* $SAMTOOLS"
 $WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
@@ -15,9 +15,11 @@ $UNTAR $SAMTOOLS.tar.bz2
 (cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
 PATH=$HERE/$SAMTOOLS/bin:$PATH
 
-$WGET https://raw.githubusercontent.com/tseemann/samclip/master/samclip
-chmod +x samclip
-mv samclip $HERE/$SAMTOOLS/bin
+SAMCLIP=samclip
+echo "* $SAMCLIP"
+$WGET https://raw.githubusercontent.com/tseemann/$SAMCLIP/master/$SAMCLIP
+chmod +x $SAMCLIP
+mv $SAMCLIP $HERE/$SAMTOOLS/bin
 
 BWAVER=0.7.17
 BWA=bwa-$BWAVER
@@ -52,8 +54,9 @@ $WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.cent
 chmod +x $SKESA/skesa
 PATH=$HERE/$SKESA:$PATH
 
-MEGAHITVER=1.1.3
-MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
+#https://github.com/voutcn/megahit/releases/download/v1.2.9/MEGAHIT-1.2.9-Linux-x86_64-static.tar.gz
+MEGAHITVER=1.2.9
+MEGAHIT=MEGAHIT-${MEGAHITVER}-Linux-x86_64-static
 MEGAHITTAR=$MEGAHIT.tar.gz
 echo "* $MEGAHIT"
 $WGET https://github.com/voutcn/megahit/releases/download/v$MEGAHITVER/$MEGAHITTAR
