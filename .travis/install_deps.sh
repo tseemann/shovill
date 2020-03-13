@@ -27,13 +27,13 @@ $UNTAR $BWA.tar.bz2
 $MAKE -C $BWA 
 PATH=$HERE/$BWA:$PATH
 
-MASHVER=2.1.1
-MASH="mash-Linux64-v$MASHVER"
-MASHTAR="$MASH.tar"
-echo "* $MASH"
-$WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
-$UNTAR $MASHTAR
-PATH=$HERE/$MASH:$PATH
+#MASHVER=2.1.1
+#MASH="mash-Linux64-v$MASHVER"
+#MASHTAR="$MASH.tar"
+#echo "* $MASH"
+#$WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
+#$UNTAR $MASHTAR
+#PATH=$HERE/$MASH:$PATH
 
 SEQTKVER=1.3
 SEQTK=v$SEQTKVER.tar.gz
@@ -60,12 +60,13 @@ $WGET https://github.com/voutcn/megahit/releases/download/v$MEGAHITVER/$MEGAHITT
 $UNTAR $MEGAHITTAR
 PATH=$HERE/$MEGAHIT:$PATH
 
-#KMC=KMC3.linux.tar.gz
-#echo "* $KMC"
-#$WGET https://github.com/refresh-bio/KMC/releases/download/v3.0.0/$KMC
-#tar xvf $KMC
-#rm -fv kmc_dump kmc_tools
-#PATH=$HERE:$PATH
+KMCVER=3.1.1
+KMC=KMC${KMCVER}.linux.tar.gz
+echo "* $KMC"
+$WGET https://github.com/refresh-bio/KMC/releases/download/v$KMCVER/$KMC
+tar xvf $KMC
+rm -fv kmc_dump kmc_tools
+PATH=$HERE:$PATH
 
 PILONVER=1.23
 JAR=pilon-$PILONVER.jar
@@ -80,7 +81,7 @@ cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
 # http://cab.spbu.ru/files/release3.12.0/SPAdes-3.12.0-Linux.tar.gz
-SPADESVER=3.13.1
+SPADESVER=3.14.0
 SPADES=SPAdes-$SPADESVER-Linux
 echo "* $SPADES"
 $WGET http://cab.spbu.ru/files/release$SPADESVER/$SPADES.tar.gz
