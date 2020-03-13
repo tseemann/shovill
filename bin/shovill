@@ -108,16 +108,12 @@ exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 # Check deps
 check_deps();
 
-# Check spades version
-my $stitch_arg = '--s2';
-if ($assembler eq 'spades' and !$nostitch) {
-  msg("Checking if $assembler supports new stitched read library option instead of $stitch_arg");
-  my $old = system("spades.py --help 2>&1 | grep -- '^--merged' > /dev/null");
-  if (! $old) {
-    $stitch_arg = '--pe1-m';
-    msg("Yes, it supports $stitch_arg");
-  }
-}
+# Tweak options for different spades versions
+my $spades_ver = spades_version();
+msg("Found spades version:", spades_version());
+my $spades_mode = $spades_ver >= "003014000" ? '--isolate' : '--only-assembler';
+my $stitch_arg = $spades_ver >= "003012000" ? '--merged' : '-s';
+msg("Will use spades $spades_ver options: $spades_mode and $stitch_arg") if $assembler eq 'spades';
 
 # Make output folder
 make_folder($outdir);
@@ -250,7 +246,7 @@ unless ($noreadcorr) {
   $COR2 = "R2.cor.fq.gz";
 }
 else {
-  msg("User specified --noreadcorr, so no read correction will be performed");
+  msg("Enabled --noreadcorr, so no read correction will be performed");
 }
 
 # Overlap corrected reads
@@ -273,7 +269,7 @@ unless ($nostitch) {
   $PE2 = "flash.notCombined_2.fastq.gz";
 }
 else {
-  msg("User specified --nostitch, so no read stitching will be performed");
+  msg("Enabled --nostitch, so no read stitching will be performed");
 }
 
 # Running the assembler engine of chouce
@@ -286,8 +282,8 @@ if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
   $opts .= " $stitch_arg $SE" if $SE;
   run_cmd(
-    "spades.py --pe1-1 $PE1 --pe1-2 $PE2"
-   ." --only-assembler --threads $cpus --memory $ram_int"
+    "spades.py -1 $PE1 -2 $PE2"
+   ." $spades_mode --threads $cpus --memory $ram_int"
    ." -o $asmdir --tmp-dir $tmpdir -k $kmers $opts"
    , "spades"
   );
@@ -455,6 +451,7 @@ my @motd = (
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
   "The name '$EXE' is pronounced as 'shovel' in English",
   "If you know your genome size, use --gsize to skip the estimation step",
+  "If you have Spades 3.14.0 or higher we use the new --isolate mode",
 );
 srand( $PROCESS_ID + $t0 + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
@@ -486,6 +483,16 @@ sub check_deps {
     }
   }
   exit(0) if $exit;
+}
+
+#----------------------------------------------------------------------
+sub spades_version {
+  my $cmd = "spades.py --version 2>&1";
+  #msg("Running: $cmd");
+  my($line) = qx"$cmd";
+  $line =~ m/ (\d+) \. (\d+) (?: \. (d+) )? /x
+    or err("Can't parse spades version from: $line");
+  return sprintf "%03d%03d%03d", $1, $2, ($3 || 0);
 }
 
 #----------------------------------------------------------------------
@@ -690,7 +697,7 @@ sub setOptions {
     "INPUT",
     {OPT=>"R1=s",       VAR=>\$R1,        DEFAULT=>'',   DESC=>"Read 1 FASTQ"},
     {OPT=>"R2=s",       VAR=>\$R2,        DEFAULT=>'',   DESC=>"Read 2 FASTQ"},
-    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
+    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>150,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
     {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
     "OUTPUT",
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
@@ -705,7 +712,7 @@ sub setOptions {
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || min(16,$MEMORY),  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
-    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: \"--untrusted-contigs locus.fna\" ..."},
+    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: '--sc'"},
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
     "MODULES",
     {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Enable adaptor trimming"},

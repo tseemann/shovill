@@ -158,7 +158,7 @@ GENERAL
 INPUT
   --R1 XXX        Read 1 FASTQ (default: '')
   --R2 XXX        Read 2 FASTQ (default: '')
-  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 100)
+  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 150)
   --gsize XXX     Estimated genome size eg. 3.2M <blank=AUTODETECT> (default: '')
 OUTPUT
   --outdir XXX    Output folder (default: '')
@@ -169,8 +169,8 @@ OUTPUT
   --keepfiles     Keep intermediate files (default: OFF)
 RESOURCES
   --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
-  --cpus N        Number of CPUs to use (0=ALL) (default: 16)
-  --ram n.nn      Try to keep RAM usage below this many GB (default: 32)
+  --cpus N        Number of CPUs to use (0=ALL) (default: 8)
+  --ram n.nn      Try to keep RAM usage below this many GB (default: 16)
 ASSEMBLER
   --assembler XXX Assembler: skesa velvet megahit spades (default: 'spades')
   --opts XXX      Extra assembler options in quotes eg. spades: "--untrusted-contigs locus.fna" ... (default: '')
@@ -185,7 +185,7 @@ MODULES
 ### --depth
 Giving an assembler too much data is a bad thing. There comes a point where you are no
 longer adding new information (as the genome is a fixed size), and only adding more noise 
-(sequencing errors). Most assemblers seem to be happy with ~100x depth, so Shovill will
+(sequencing errors). Most assemblers seem to be happy with ~150x depth, so Shovill will
 downsample your FASTQ files to this depth. It estimates depth by dividing read yield by
 genome size.
 
@@ -239,8 +239,8 @@ You can use the normal command line option to override them still.
 
 Variable | Option | Default
 ---------|--------|------------
-`$SHOVILL_CPUS` | `--cpus` | 16
-`$SHOVILL_RAM` | `--ram` | 32
+`$SHOVILL_CPUS` | `--cpus` | 8
+`$SHOVILL_RAM` | `--ram` | 16
 `$SHOVILL_ASSEMBLER` | `--assembler` | `spades`
 `$TMPDIR` | `--tmpdir` | `/tmp`
 
@@ -253,6 +253,7 @@ Variable | Option | Default
 * _Do you support long reads from Pacbio or Nanopore?_
 
   No, this is strictly for Illumina paired-end reads only.
+  Try use Flye. CANU, or Redbean.
 
 * _Why does Shovill crash?_
 
