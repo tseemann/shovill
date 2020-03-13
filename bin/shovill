@@ -57,12 +57,6 @@ my %VERSION = (
   'pilon'       => 'pilon --version 2>&1 | grep -v _JAVA',
 );
 
-# some tools are just too hard to put into TRAVIS...
-if ($ENV{TRAVIS} eq 'true') {
-  msg("Running in TRAVIS, will remove skesa assembler");
-  delete $VERSION{'skesa'};
-}
-
 # Hardware stats
 my $CORES = num_cpus();
 my $MEMORY = avail_ram_gb();
