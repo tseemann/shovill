@@ -3,7 +3,8 @@
 set -e
 
 HERE="$PWD"
-WGET="wget --quiet"
+#WGET="wget --quiet"
+WGET="wget --progress=dot:mega"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
@@ -12,7 +13,7 @@ SAMTOOLS=samtools-$SAMTOOLSVER
 echo "* $SAMTOOLS"
 $WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
 $UNTAR $SAMTOOLS.tar.bz2
-(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
+(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS --disable-s3 --disable-gcs --disable-libcurl --disable-plugins && $MAKE install)
 PATH=$HERE/$SAMTOOLS/bin:$PATH
 
 SAMCLIP=samclip
