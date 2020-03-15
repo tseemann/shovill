@@ -100,7 +100,7 @@ You will need to install all the dependencies manually:
 * FLASH
 * SAMtools >= 1.3
 * BWA MEM 
-* MASH >= 2.0
+* KMC
 * seqtk
 * pigz
 * Pilon (Java)
