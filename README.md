@@ -79,10 +79,24 @@ shovill --check
 Using [Bioconda](https://bioconda.github.io/)
 will install all the dependencies for you on MacOS and Linux.
 
-### Docker
+### Containers
 
-Use the 
-[Bioboxes Shovill container](https://github.com/bioboxes/shovill/blob/master/Dockerfile).
+The
+[Docker recipe](https://hub.docker.com/r/staphb/shovill)
+is generously maintained by
+[Curtis Kapsak](https://github.com/kapsakcj)
+and the
+[StaPH-B](https://github.com/StaPH-B/docker-builds) workgroup.
+
+```
+# Docker
+docker pull staphb/shovill:latest
+docker run staphb/shovill:latest shovill --help
+
+# Singularity
+singularity build shovill.sif docker://staphb/shovill:latest
+singularity exec shovill.sif shovill --help
+```
 
 ### Source
 
@@ -92,13 +106,13 @@ git clone https://github.com/tseemann/shovill.git
 ./shovill/bin/shovill --check
 ```
 You will need to install all the dependencies manually:
-* SPAdes >= 3.11
+* SPAdes >= 3.11 (prefer >= 3.14)
 * SKESA
 * MEGAHIT
 * Velvet >= 1.2
 * Lighter
 * FLASH
-* SAMtools >= 1.3
+* SAMtools >= 1.3 (prefer >= 1.10)
 * BWA MEM 
 * KMC
 * seqtk
