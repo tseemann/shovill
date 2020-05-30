@@ -116,10 +116,13 @@ You will need to install all the dependencies manually:
 * [BWA MEM](https://sourceforge.net/projects/bio-bwa/files/) 
 * [KMC](http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=kmc&subpage=about)
 * [seqtk](https://github.com/lh3/seqtk/releases)
-* [pigz](https://zlib.net/pigz/) but should be in your OS distribution
-* [Pilon](https://github.com/broadinstitute/pilon/releases/) (Java)
+* [pigz](https://zlib.net/pigz/). Pigz should be available with your OS distribution.
+* [Pilon](https://github.com/broadinstitute/pilon/releases/) (Java).
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (Java)
 * [samclip](https://github.com/tseemann/samclip/releases)
+
+Note that you will need to make pilon and trimmomatic executables. You can make a simple wrapper
+for each that just passes the shell arguments.
 
 ## Output files
 
