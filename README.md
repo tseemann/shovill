@@ -106,20 +106,23 @@ git clone https://github.com/tseemann/shovill.git
 ./shovill/bin/shovill --check
 ```
 You will need to install all the dependencies manually:
-* SPAdes >= 3.11 (prefer >= 3.14)
-* SKESA
-* MEGAHIT
-* Velvet >= 1.2
-* Lighter
-* FLASH
-* SAMtools >= 1.3 (prefer >= 1.10)
-* BWA MEM 
-* KMC
-* seqtk
-* pigz
-* Pilon (Java)
-* Trimmomatic (Java)
-* samclip
+* [SPAdes](http://cab.spbu.ru/software/spades/) >= 3.11 (prefer >= 3.14)
+* [SKESA](https://github.com/ncbi/SKESA/releases)
+* [MEGAHIT](https://github.com/voutcn/megahit/releases)
+* [Velvet](https://www.ebi.ac.uk/~zerbino/velvet/) >= 1.2
+* [Lighter](https://github.com/mourisl/Lighter/releases)
+* [FLASh](https://ccb.jhu.edu/software/FLASH/)
+* [SAMtools](http://www.htslib.org/) >= 1.3 (prefer >= 1.10)
+* [BWA MEM](https://sourceforge.net/projects/bio-bwa/files/) 
+* [KMC](http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=kmc&subpage=about)
+* [seqtk](https://github.com/lh3/seqtk/releases)
+* [pigz](https://zlib.net/pigz/). Pigz should be available with your OS distribution.
+* [Pilon](https://github.com/broadinstitute/pilon/releases/) (Java).
+* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (Java)
+* [samclip](https://github.com/tseemann/samclip/releases)
+
+Note that you will need to make pilon and trimmomatic executables. You can make a simple wrapper
+for each that just passes the shell arguments.
 
 ## Output files
 
