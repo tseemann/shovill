@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.0.9";
+my $VERSION = "1.1.0";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -39,7 +39,8 @@ my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 my %VERSION = (
   'seqtk'       => 'seqtk 2>&1 | grep Version',
   'pigz'        => 'pigz --version 2>&1',
-  'mash'        => 'mash --version 2>&1',
+#  'mash'        => 'mash --version 2>&1',
+  'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
   'flash'       => 'flash --version 2>&1 | grep FLASH',
@@ -56,12 +57,6 @@ my %VERSION = (
   'pilon'       => 'pilon --version 2>&1 | grep -v _JAVA',
 );
 
-# some tools are just too hard to put into TRAVIS...
-if ($ENV{TRAVIS} eq 'true') {
-  msg("Running in TRAVIS, will remove skesa assembler");
-  delete $VERSION{'skesa'};
-}
-
 # Hardware stats
 my $CORES = num_cpus();
 my $MEMORY = avail_ram_gb();
@@ -71,6 +66,7 @@ my(@Options, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $se, $assembler, $opts, $ram, $depth,
              $nocorr, $trim, $minlen, $mincov);
+
 setOptions();
 
 # Say hello
@@ -85,6 +81,7 @@ msg("Machine has $CORES CPU cores and $MEMORY GB RAM");
 
 # Check options
 $outdir or err("Please specify output folder with --outdir");
+
 -r $se or err("Can't read --se $se");
 -r $ADAPTERS or err("Can't see adapter file: $ADAPTERS");
 $gsize = $gsize ? parse_genome_size($gsize) : 0;  # 0 = autodetect later
@@ -105,10 +102,18 @@ exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 # Check deps
 check_deps();
 
+# Tweak options for different spades versions
+my $spades_ver = spades_version();
+msg("Found spades version:", spades_version());
+my $spades_mode = $spades_ver >= "003014000" ? '--isolate' : '--only-assembler';
+my $stitch_arg = $spades_ver >= "003012000" ? '--merged' : '-s';
+msg("Will use spades $spades_ver options: $spades_mode and $stitch_arg") if $assembler eq 'spades';
+
 # Make output folder
 make_folder($outdir);
 $outdir = abs_path($outdir);
 $se = abs_path($se);
+
 
 # Ensure we have a tempdir
 $tmpdir ||= File::Temp->newdir(CLEANUP=>1);
@@ -130,14 +135,25 @@ map { msg("Read stats: $_ = ".$stat->{$_}) } (keys %$stat);
 
 # Estimate genome size (or use genome size provided) using KMC
 unless ($gsize) {
-  msg("Estimating genome size with 'mash'");
-  my $minkc = 3;
-  my $mincov = 25;
+  my $kmer = 21;
+  my $minkc = 10;
+  msg("Estimating genome size by counting unqiue $kmer-mers > frequency $minkc ");
   my $tmpout = File::Temp->newdir();
-  run_cmd("mash sketch -o $tmpout/sketch -k 32 -m $minkc -r \Q$se\E");
-  unlink "$tmpout/sketch.msh";
-  my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
-  $bp =~ m/(\S+)$/ or err("Could not determine genome size from '$bp'");
+
+  # @@@ MASH @@@
+  #run_cmd("mash sketch -o $tmpout/sketch -k 21 -m $minkc -r \Q$R1\E");
+  #unlink "$tmpout/sketch.msh";
+  # Estimated genome size: 1.99608e+06
+  #my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
+
+  # @@@ KMC @@@
+  run_cmd("kmc -sm -m$half_ram -t$cpus -k$kmer -ci$minkc \Q$Rse\E $tmpout/kmc $tmpout");
+  unlink <$tmpout/kmc.*>;
+  # No. of unique counted k-mers       :      2054586
+  my($bp) = grep { m/unique counted k/i } read_lines($LOGFILE);
+
+  # we use \S not \d here because it could be in scientific form for mash
+  $bp =~ m/(\S+)\s*$/ or err("Could not determine genome size from '$bp'");
   $gsize = int($1);
 }
 msg("Using genome size $gsize bp");
@@ -228,7 +244,7 @@ if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
   run_cmd(
     "spades.py -s $SE"
-   ." --only-assembler --threads $cpus --memory $ram_int"
+   ." $spades_mode --threads $cpus --memory $ram_int"
    ." -o $asmdir --tmp-dir $tmpdir -k $kmers $opts"
    , "spades"
   );
@@ -393,6 +409,7 @@ my @motd = (
   "Did you know? $EXE is a play on the words 'Spades' and 'Illumina' ('shovel')",
   "The name '$EXE' is pronounced as 'shovel' in English",
   "If you know your genome size, use --gsize to skip the estimation step",
+  "If you have Spades 3.14.0 or higher we use the new --isolate mode",
 );
 srand( $PROCESS_ID + $t0 + $MAX_K ); # seed
 msg( $motd[ int(rand(scalar(@motd))) ] );
@@ -424,6 +441,16 @@ sub check_deps {
     }
   }
   exit(0) if $exit;
+}
+
+#----------------------------------------------------------------------
+sub spades_version {
+  my $cmd = "spades.py --version 2>&1";
+  #msg("Running: $cmd");
+  my($line) = qx"$cmd";
+  $line =~ m/ (\d+) \. (\d+) (?: \. (d+) )? /x
+    or err("Can't parse spades version from: $line");
+  return sprintf "%03d%03d%03d", $1, $2, ($3 || 0);
 }
 
 #----------------------------------------------------------------------
@@ -627,7 +654,7 @@ sub setOptions {
     {OPT=>"check!",     VAR=>\&check_deps,               DESC=>"Check dependencies are installed"},
     "INPUT",
     {OPT=>"se|single=s",VAR=>\$se,        DEFAULT=>'',   DESC=>"Single-end reads"},
-    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>100,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
+    {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>150,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
     {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
     "OUTPUT",
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
@@ -642,7 +669,7 @@ sub setOptions {
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || min(16,$MEMORY),  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
-    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: \"--untrusted-contigs locus.fna\" ..."},
+    {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: '--sc' ..."},
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
     "MODULES",
     {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Enable adaptor trimming"},
