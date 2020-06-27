@@ -3,21 +3,24 @@
 set -e
 
 HERE="$PWD"
-WGET="wget --quiet"
+#WGET="wget --quiet"
+WGET="wget --progress=dot:mega"
 MAKE="make --silent -j"
 UNTAR="tar xf"
 
-SAMTOOLSVER=1.9
+SAMTOOLSVER=1.10
 SAMTOOLS=samtools-$SAMTOOLSVER
 echo "* $SAMTOOLS"
 $WGET https://github.com/samtools/samtools/releases/download/$SAMTOOLSVER/$SAMTOOLS.tar.bz2
 $UNTAR $SAMTOOLS.tar.bz2
-(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS && $MAKE install)
+(cd $SAMTOOLS && ./configure --prefix=$HERE/$SAMTOOLS --disable-s3 --disable-gcs --disable-libcurl --disable-plugins && $MAKE install)
 PATH=$HERE/$SAMTOOLS/bin:$PATH
 
-$WGET https://raw.githubusercontent.com/tseemann/samclip/master/samclip
-chmod +x samclip
-mv samclip $HERE/$SAMTOOLS/bin
+SAMCLIP=samclip
+echo "* $SAMCLIP"
+$WGET https://raw.githubusercontent.com/tseemann/$SAMCLIP/master/$SAMCLIP
+chmod +x $SAMCLIP
+mv $SAMCLIP $HERE/$SAMTOOLS/bin
 
 BWAVER=0.7.17
 BWA=bwa-$BWAVER
@@ -27,13 +30,13 @@ $UNTAR $BWA.tar.bz2
 $MAKE -C $BWA 
 PATH=$HERE/$BWA:$PATH
 
-MASHVER=2.1.1
-MASH="mash-Linux64-v$MASHVER"
-MASHTAR="$MASH.tar"
-echo "* $MASH"
-$WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
-$UNTAR $MASHTAR
-PATH=$HERE/$MASH:$PATH
+#MASHVER=2.1.1
+#MASH="mash-Linux64-v$MASHVER"
+#MASHTAR="$MASH.tar"
+#echo "* $MASH"
+#$WGET https://github.com/marbl/Mash/releases/download/v$MASHVER/$MASHTAR
+#$UNTAR $MASHTAR
+#PATH=$HERE/$MASH:$PATH
 
 SEQTKVER=1.3
 SEQTK=v$SEQTKVER.tar.gz
@@ -52,20 +55,22 @@ $WGET -O $SKESA/skesa https://ftp.ncbi.nlm.nih.gov/pub/agarwala/skesa/skesa.cent
 chmod +x $SKESA/skesa
 PATH=$HERE/$SKESA:$PATH
 
-MEGAHITVER=1.1.3
-MEGAHIT=megahit_v${MEGAHITVER}_LINUX_CPUONLY_x86_64-bin
+#https://github.com/voutcn/megahit/releases/download/v1.2.9/MEGAHIT-1.2.9-Linux-x86_64-static.tar.gz
+MEGAHITVER=1.2.9
+MEGAHIT=MEGAHIT-${MEGAHITVER}-Linux-x86_64-static
 MEGAHITTAR=$MEGAHIT.tar.gz
 echo "* $MEGAHIT"
 $WGET https://github.com/voutcn/megahit/releases/download/v$MEGAHITVER/$MEGAHITTAR
 $UNTAR $MEGAHITTAR
-PATH=$HERE/$MEGAHIT:$PATH
+PATH=$HERE/$MEGAHIT/bin:$PATH
 
-#KMC=KMC3.linux.tar.gz
-#echo "* $KMC"
-#$WGET https://github.com/refresh-bio/KMC/releases/download/v3.0.0/$KMC
-#tar xvf $KMC
-#rm -fv kmc_dump kmc_tools
-#PATH=$HERE:$PATH
+KMCVER=3.1.1
+KMC=KMC${KMCVER}.linux.tar.gz
+echo "* $KMC"
+$WGET https://github.com/refresh-bio/KMC/releases/download/v$KMCVER/$KMC
+tar xvf $KMC
+rm -fv kmc_dump kmc_tools
+PATH=$HERE:$PATH
 
 PILONVER=1.23
 JAR=pilon-$PILONVER.jar
@@ -80,7 +85,7 @@ cat "$PILONSH"
 PATH=$HERE/$PILON:$PATH
 
 # http://cab.spbu.ru/files/release3.12.0/SPAdes-3.12.0-Linux.tar.gz
-SPADESVER=3.13.1
+SPADESVER=3.14.0
 SPADES=SPAdes-$SPADESVER-Linux
 echo "* $SPADES"
 $WGET http://cab.spbu.ru/files/release$SPADESVER/$SPADES.tar.gz

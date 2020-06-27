@@ -24,11 +24,13 @@ install:
     - "find deps -executable -type f"
 
 script:
+    - "kmc"
+    - "skesa --version"
     - "shovill --version"
     - "shovill --check"
     - "shovill --help"
     - "! shovill --doesnotexist"
-    - "shovill --outdir out.spades --assembler spades --cpus 8 --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 4 --nostitch --noreadcorr --nocorr"
+    - "shovill --outdir out.spades --assembler spades --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --noreadcorr --nocorr"
     - "grep '>' out.spades/contigs.fa"
     - "shovill --outdir out.megahit --assembler megahit --R1 test/R1.fq.gz --R2 test/R2.fq.gz --trim"
     - "grep '>' out.megahit/contigs.fa"

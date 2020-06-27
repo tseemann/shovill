@@ -79,10 +79,24 @@ shovill --check
 Using [Bioconda](https://bioconda.github.io/)
 will install all the dependencies for you on MacOS and Linux.
 
-### Docker
+### Containers
 
-Use the 
-[Bioboxes Shovill container](https://github.com/bioboxes/shovill/blob/master/Dockerfile).
+The
+[Docker recipe](https://hub.docker.com/r/staphb/shovill)
+is generously maintained by
+[Curtis Kapsak](https://github.com/kapsakcj)
+and the
+[StaPH-B](https://github.com/StaPH-B/docker-builds) workgroup.
+
+```
+# Docker
+docker pull staphb/shovill:latest
+docker run staphb/shovill:latest shovill --help
+
+# Singularity
+singularity build shovill.sif docker://staphb/shovill:latest
+singularity exec shovill.sif shovill --help
+```
 
 ### Source
 
@@ -92,20 +106,23 @@ git clone https://github.com/tseemann/shovill.git
 ./shovill/bin/shovill --check
 ```
 You will need to install all the dependencies manually:
-* SPAdes >= 3.11
-* SKESA
-* MEGAHIT
-* Velvet >= 1.2
-* Lighter
-* FLASH
-* SAMtools >= 1.3
-* BWA MEM 
-* MASH >= 2.0
-* seqtk
-* pigz
-* Pilon (Java)
-* Trimmomatic (Java)
-* samclip
+* [SPAdes](http://cab.spbu.ru/software/spades/) >= 3.11 (prefer >= 3.14)
+* [SKESA](https://github.com/ncbi/SKESA/releases)
+* [MEGAHIT](https://github.com/voutcn/megahit/releases)
+* [Velvet](https://www.ebi.ac.uk/~zerbino/velvet/) >= 1.2
+* [Lighter](https://github.com/mourisl/Lighter/releases)
+* [FLASh](https://ccb.jhu.edu/software/FLASH/)
+* [SAMtools](http://www.htslib.org/) >= 1.3 (prefer >= 1.10)
+* [BWA MEM](https://sourceforge.net/projects/bio-bwa/files/) 
+* [KMC](http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=kmc&subpage=about)
+* [seqtk](https://github.com/lh3/seqtk/releases)
+* [pigz](https://zlib.net/pigz/). Pigz should be available with your OS distribution.
+* [Pilon](https://github.com/broadinstitute/pilon/releases/) (Java).
+* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (Java)
+* [samclip](https://github.com/tseemann/samclip/releases)
+
+Note that you will need to make pilon and trimmomatic executables. You can make a simple wrapper
+for each that just passes the shell arguments.
 
 ## Output files
 
@@ -158,7 +175,7 @@ GENERAL
 INPUT
   --R1 XXX        Read 1 FASTQ (default: '')
   --R2 XXX        Read 2 FASTQ (default: '')
-  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 100)
+  --depth N       Sub-sample --R1/--R2 to this depth. Disable with --depth 0 (default: 150)
   --gsize XXX     Estimated genome size eg. 3.2M <blank=AUTODETECT> (default: '')
 OUTPUT
   --outdir XXX    Output folder (default: '')
@@ -169,8 +186,8 @@ OUTPUT
   --keepfiles     Keep intermediate files (default: OFF)
 RESOURCES
   --tmpdir XXX    Fast temporary directory (default: '/tmp/tseemann')
-  --cpus N        Number of CPUs to use (0=ALL) (default: 16)
-  --ram n.nn      Try to keep RAM usage below this many GB (default: 32)
+  --cpus N        Number of CPUs to use (0=ALL) (default: 8)
+  --ram n.nn      Try to keep RAM usage below this many GB (default: 16)
 ASSEMBLER
   --assembler XXX Assembler: skesa velvet megahit spades (default: 'spades')
   --opts XXX      Extra assembler options in quotes eg. spades: "--untrusted-contigs locus.fna" ... (default: '')
@@ -185,7 +202,7 @@ MODULES
 ### --depth
 Giving an assembler too much data is a bad thing. There comes a point where you are no
 longer adding new information (as the genome is a fixed size), and only adding more noise 
-(sequencing errors). Most assemblers seem to be happy with ~100x depth, so Shovill will
+(sequencing errors). Most assemblers seem to be happy with ~150x depth, so Shovill will
 downsample your FASTQ files to this depth. It estimates depth by dividing read yield by
 genome size.
 
@@ -239,8 +256,8 @@ You can use the normal command line option to override them still.
 
 Variable | Option | Default
 ---------|--------|------------
-`$SHOVILL_CPUS` | `--cpus` | 16
-`$SHOVILL_RAM` | `--ram` | 32
+`$SHOVILL_CPUS` | `--cpus` | 8
+`$SHOVILL_RAM` | `--ram` | 16
 `$SHOVILL_ASSEMBLER` | `--assembler` | `spades`
 `$TMPDIR` | `--tmpdir` | `/tmp`
 
@@ -253,6 +270,7 @@ Variable | Option | Default
 * _Do you support long reads from Pacbio or Nanopore?_
 
   No, this is strictly for Illumina paired-end reads only.
+  Try use Flye. CANU, or Redbean.
 
 * _Why does Shovill crash?_
 
