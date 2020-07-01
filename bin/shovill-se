@@ -147,7 +147,7 @@ unless ($gsize) {
   #my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
 
   # @@@ KMC @@@
-  run_cmd("kmc -sm -m$half_ram -t$cpus -k$kmer -ci$minkc \Q$Rse\E $tmpout/kmc $tmpout");
+  run_cmd("kmc -sm -m$half_ram -t$cpus -k$kmer -ci$minkc \Q$se\E $tmpout/kmc $tmpout");
   unlink <$tmpout/kmc.*>;
   # No. of unique counted k-mers       :      2054586
   my($bp) = grep { m/unique counted k/i } read_lines($LOGFILE);
