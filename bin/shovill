@@ -18,7 +18,6 @@ my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
 my $APPDIR = abs_path( "$FindBin::RealBin/.." );
-my $ADAPTERS = "$APPDIR/db/trimmomatic.fa"; # hard-code this for Conda etc.
 my $LOGTMP = File::Temp->new();
 my $LOGFILE = $LOGTMP->filename;
 
@@ -29,7 +28,6 @@ my $MIN_BQ = 3;               # for trimming and stats and pilon
 my $MIN_MQ = 60;              # for pilon
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 2;           # for all tools
-my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
 my $t0 = time;                # basetime to measure running duration
@@ -64,7 +62,7 @@ my $MEMORY = avail_ram_gb();
 # Options
 my(@Options, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
-             $kmers, $gsize, $R1, $R2, $assembler, $opts, $ram, $depth,
+             $kmers, $gsize, $R1, $R2, $ADAPTERS, $assembler, $opts, $ram, $depth,
              $nocorr, $trim, $nostitch, $noreadcorr,
              $minlen, $mincov);
 setOptions();
@@ -182,6 +180,7 @@ $ENV{'_JAVA_OPTIONS'} .= " $javaopt";
 
 # Get reads: if trimming, trim the originals into this folder, otherwise symlink
 if ($trim) {
+  my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
   msg("Trimming reads");
   run_cmd(
     "trimmomatic PE -threads $cpus -phred33".
@@ -693,6 +692,7 @@ sub setOptions {
     {OPT=>"R2=s",       VAR=>\$R2,        DEFAULT=>'',   DESC=>"Read 2 FASTQ"},
     {OPT=>"depth=i",    VAR=>\$depth,     DEFAULT=>150,  DESC=>"Sub-sample --R1/--R2 to this depth. Disable with --depth 0"},
     {OPT=>"gsize=s",    VAR=>\$gsize,     DEFAULT=>'',   DESC=>"Estimated genome size eg. 3.2M <blank=AUTODETECT>"},
+    {OPT=>"adapters=s", VAR=>\$ADAPTERS,  DEFAULT=>$APPDIR.'/db/trimmomatic.fa', DESC=>"Path to Adapters file"},
     "OUTPUT",
     {OPT=>"outdir=s",   VAR=>\$outdir,    DEFAULT=>'',   DESC=>"Output folder"},
     {OPT=>"force!",     VAR=>\$force,     DEFAULT=>0,    DESC=>"Force overwite of existing output folder"},
