@@ -485,7 +485,7 @@ sub read_stats {
     $stat->{$tag} = int( $1 + 0.5 );
   }
   $row[2] =~ m/^ALL\s+(\d+)/ or err("Can't parse ALL #bases from: $row[2]");
-  $stat->{'total_bp'} = $1
+  $stat->{'total_bp'} = $1;
   return $stat;
 }
 
