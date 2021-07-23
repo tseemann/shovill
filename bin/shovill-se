@@ -65,7 +65,7 @@ my $MEMORY = avail_ram_gb();
 my(@Options, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $se, $assembler, $opts, $ram, $depth,
-             $nocorr, $trim, $minlen, $mincov);
+             $nocorr, $trim, $noreadcorr, $minlen, $mincov);
 
 setOptions();
 
@@ -166,8 +166,8 @@ msg("Estimated sequencing depth: $orig_depth x");
 if ($depth and $depth > 0 and $orig_depth > 1.1 * $depth) {
   my $factor = sprintf "%.3f", $depth / $orig_depth;
   msg("Subsampling reads by factor $factor to get from ${orig_depth}x to ${depth}x");
-  run_cmd("seqtk sample \Q$se\E $factor | pigz --fast -c -p $cpus > se.sub.fq.gz");
-  $se = "se.sub.fq.gz";
+  run_cmd("seqtk sample \Q$se\E $factor | pigz --fast -c -p $cpus > SE.sub.fq.gz");
+  $se = "SE.sub.fq.gz";
 }
 else {
   msg("No read depth reduction requested or necessary.");
@@ -181,14 +181,10 @@ $ENV{'_JAVA_OPTIONS'} .= " $javaopt";
 # Get reads: if trimming, trim the originals into this folder, otherwise symlink
 if ($trim) {
   msg("Trimming reads");
-  run_cmd(
-    "trimmomatic SE -threads $cpus -phred33".
-    " \Q$se\E se.fq.gz $TRIMOPT",
-    "trimmomatic"
-  );
+  run_cmd("trimmomatic SE -threads $cpus -phred33 \Q$se\E SE.fq.gz $TRIMOPT", "trimmomatic");
 }
 else {
-  run_cmd("ln -sf \Q$se\E se.fq.gz");
+  run_cmd("ln -sf \Q$se\E SE.fq.gz");
 }
 
 # Calculating read length distribution
@@ -228,14 +224,22 @@ $kmers = join(',', @kmers);
 msg("Using kmers: $kmers");
 
 # Correct reads
-msg("Single-end reads, so no read correction will be performed");
+my $COR = "SE.fq.gz";
+unless ($noreadcorr) {
+  msg("Correcting reads with 'Lighter'");
+  run_cmd("lighter -od . -r SE.fq.gz -K 32 $gsize -t $cpus -maxcor 1");
+  $COR = "SE.cor.fq.gz";
+}
+else {
+  msg("Enabled --noreadcorr, so no read correction will be performed");
+}
 
 # Overlap corrected reads
 msg("Single-end reads, so no read stitching will be performed");
 
 # Running the assembler engine of chouce
 msg("Assembling reads with '$assembler'");
-my $SE = "se.fq.gz";
+my $SE = $COR;
 my $asm = "$assembler.fasta";  # assembler result file to process further
 my $asmdir = $assembler;
 remove_tree($asmdir) if -d $asmdir;
@@ -295,7 +299,7 @@ unless ($nocorr) {
   run_cmd("samtools faidx $asm", "faidx");
   # use original reads here, to help fix any errors from overlapping PE stitching
   my $sort_ram = int($half_ram * 1024 / $sort_cpus); # RAM per thread, in Mb
-  run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm se.fq.gz"
+  run_cmd("(bwa mem -v 3 -x intractg -t $cpus $asm SE.fq.gz"
          ." | samclip --ref ${asm}.fai"
          ." | samtools sort --threads $sort_cpus -m ${sort_ram}m"
          ." --reference $asm -T $tmpdir -o $BAM)", "bwa+samtools-sort");
@@ -673,6 +677,7 @@ sub setOptions {
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
     "MODULES",
     {OPT=>"trim!",      VAR=>\$trim,      DEFAULT=>0,    DESC=>"Enable adaptor trimming"},
+    {OPT=>"noreadcorr!",VAR=>\$noreadcorr,DEFAULT=>0,    DESC=>"Disable read error correction"},
     {OPT=>"nocorr!",    VAR=>\$nocorr,    DEFAULT=>0,    DESC=>"Disable post-assembly correction"},
   );
 
