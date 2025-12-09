@@ -33,7 +33,7 @@ jobs:
       run: |
         mkdir -p deps
         cd deps
-        source install_deps.sh
+        source ../.travis/install_deps.sh
         cd ..
     
     - name: Display paths for debugging
