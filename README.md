@@ -1,3 +1,5 @@
+*Note: this fork supports single-end reads and is available from [Bioconda](https://bioconda.github.io/recipes/shovill-se/README.html) under the name `shovill-se`*
+
 [![Build Status](https://travis-ci.org/tseemann/shovill.svg?branch=master)](https://travis-ci.org/tseemann/shovill)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Don't judge me](https://img.shields.io/badge/Language-Perl_5-steelblue.svg)
