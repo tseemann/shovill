@@ -33,7 +33,7 @@ jobs:
       run: |
         mkdir -p deps
         cd deps
-        source ../.travis/install_deps.sh
+        . ../.travis/install_deps.sh
         cd ..
     
     - name: Display paths for debugging
@@ -59,7 +59,7 @@ jobs:
       run: shovill --help
     
     - name: Test shovill with invalid option
-      run: "! shovill --doesnotexist"
+      run: bash -c '! shovill --doesnotexist'
     
     - name: Test shovill with spades assembler
       run: shovill --outdir out.spades --assembler spades --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --noreadcorr --nocorr
