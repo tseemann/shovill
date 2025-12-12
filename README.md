@@ -257,6 +257,31 @@ Variable | Option | Default
 `$SHOVILL_ASSEMBLER` | `--assembler` | `spades`
 `$TMPDIR` | `--tmpdir` | `/tmp`
 
+
+## Running multiple assemblies
+
+Although `shovill` does not have native support
+to run lots of assemblies, it can be achieved
+quite elegantly with stanfdard Unix toiols:
+
+Firstly, create an input file in TSV format:
+```
+% cat input.tsv
+StrainA   A_R1.fq.gz    A_R1.fq.gz
+StrainB   B_R1.fq.gz    B_R1.fq.gz
+StrainC   C_R1.fq.gz    B_R1.fq.gz
+```
+Then use the GNU `parallel` command:
+```
+% parallel -a input.tsv -j 1 --col-sep "\t" "shovill --outdir {1} --R1 {2} --R2 {3}" 
+```
+This will read `input.tsv` one line at a time, 
+and put the columns into valiables `{1} {2} {3|`
+and pass them to a `shovill` command. 
+You can customize this to change any 
+parameters or output options as needed.
+
+
 ## FAQ
 
 * _Does `shovill` wotk with Spades 4.x ?_
