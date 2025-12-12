@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.1.0";
+my $VERSION = "1.2.0";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -46,6 +46,7 @@ my %VERSION = (
   'flash'       => 'flash --version 2>&1 | grep FLASH',
   'spades.py'   => 'spades.py  --version 2>&1',
   'skesa'       => 'skesa --version 2>&1 | grep SKESA',
+  'gfa_connector' => 'gfa_connector --version 2>&1 | grep gfa_connector',
   'megahit'     => 'megahit --version 2>&1',
   'megahit_toolkit' => 'megahit_toolkit dumpversion 2>&1',
   'velveth'     => 'velveth 2>&1 | grep Version',
@@ -291,7 +292,12 @@ elsif ($assembler eq 'skesa') {
    ." --memory $ram_int --cores $cpus"
    ." --vector_percent 1"  # https://github.com/ncbi/SKESA/issues/7
   );
-  # skesa writes contigs directly, not "outdir"
+  my $singles = $SE ? "--reads $SE" : "";
+  run_cmd(
+    "gfa_connector --cores $cpus"
+   ." --use_paired_ends --reads $PE1,$PE2 $singles"
+   ." --contigs $asm --gfa $assembler.gfa"
+  );
 }
 elsif ($assembler eq 'megahit') {
   $opts .= " -r $SE" if $SE;
