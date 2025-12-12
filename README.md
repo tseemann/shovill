@@ -291,7 +291,7 @@ to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
 
 ## Citation
 
-Seemann T (2016) _Shovill_ *Github* 
+Seemann T (2016) _Shovill_ **Github**
 https://github.com/tseemann/shovill
 
 ## Author
