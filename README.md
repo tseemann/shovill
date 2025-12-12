@@ -63,19 +63,11 @@ ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
 
 ## Installation
 
-### Homebrew
-
-```
-brew install brewsci/bio/shovill
-shovill --check
-```
-Using Homebrew will install all the dependencies for you: 
-[Linux](http://linuxbrew.sh) or [MacOS](http://brew.sh)
-
 ### Conda
 
 ```
-conda install -c conda-forge -c bioconda -c defaults shovill
+conda install -c conda-forge -c bioconda shovill
+shovill --version
 shovill --check
 ```
 Using [Bioconda](https://bioconda.github.io/)
@@ -104,11 +96,13 @@ singularity exec shovill.sif shovill --help
 
 ```
 git clone https://github.com/tseemann/shovill.git
+conda env create -n shovill -f shovill/environmet.yml
+conda activate shovill
 ./shovill/bin/shovill --help
 ./shovill/bin/shovill --check
 ```
 You will need to install all the dependencies manually:
-* [SPAdes](http://cab.spbu.ru/software/spades/) >= 3.11 (prefer >= 3.14)
+* [SPAdes](http://cab.spbu.ru/software/spades/) >= 3.11, < 4.0.0
 * [SKESA](https://github.com/ncbi/SKESA/releases)
 * [MEGAHIT](https://github.com/voutcn/megahit/releases)
 * [Velvet](https://www.ebi.ac.uk/~zerbino/velvet/) >= 1.2
@@ -277,7 +271,7 @@ Variable | Option | Default
 * _Why does Shovill crash?_
 
   Shovill has a lot of dependencies. If any dependencies
-  are not installed correctly it will die. Spades also
+  are not installed correctly it will die. Spades[5~ also
   doesn't handle --cpus > 16 very well - try giving more RAM.
 
 * _Can I assemble metagenomes with Shovill?_
@@ -297,7 +291,8 @@ to the [Issue Tracker](https://github.com/tseemann/shovill/issues)
 
 ## Citation
 
-Not published yet.
+Seemann T (2016) _Shovill_ *Github* 
+https://github.com/tseemann/shovill
 
 ## Author
 
