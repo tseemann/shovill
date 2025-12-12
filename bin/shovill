@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.2.0";
+my $VERSION = "1.3.0";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -39,7 +39,6 @@ my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 my %VERSION = (
   'seqtk'       => 'seqtk 2>&1 | grep Version',
   'pigz'        => 'pigz --version 2>&1',
-#  'mash'        => 'mash --version 2>&1',
   'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
@@ -67,7 +66,7 @@ my(@Options, $version,
              $outdir, $force, $cpus, $tmpdir, $keepfiles, $namefmt,
              $kmers, $gsize, $R1, $R2, $assembler, $opts, $ram, $depth,
              $nocorr, $trim, $nostitch, $noreadcorr,
-             $minlen, $mincov);
+             $minlen, $mincov, $plasmid);
 setOptions();
 
 # Say hello
@@ -99,15 +98,18 @@ my $sort_cpus = max( 1, int(0.25 * $cpus) );  # for samtools sort in pipe
 $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
+$plasmid && $assembler ne 'spades' and err("--plasmidi only supported by --assembler spades");
 
 # Check deps
 check_deps();
 
 # Tweak options for different spades versions
 my $spades_ver = spades_version();
-msg("Found spades version:", spades_version());
-my $spades_mode = $spades_ver >= "003014000" ? '--isolate' : '--only-assembler';
-my $stitch_arg = $spades_ver >= "003012000" ? '--merged' : '-s';
+msg("Found spades version: $spades_ver");
+$spades_ver ge "003014000" && $spades_ver le "004000000"
+  or err("Need spades version >= 3.14 and < 4.0");
+my $spades_mode = $plasmid ? '--plasmid' :'--isolate';
+my $stitch_arg = '--merged'; # -s for old version
 msg("Will use spades $spades_ver options: $spades_mode and $stitch_arg") if $assembler eq 'spades';
 
 # Make output folder
@@ -712,6 +714,7 @@ sub setOptions {
     {OPT=>"ram=f",      VAR=>\$ram,       DEFAULT=>$ENV{SHOVILL_RAM} || min(16,$MEMORY),  DESC=>"Try to keep RAM usage below this many GB"},
     "ASSEMBLER",
     {OPT=>"assembler=s",VAR=>\$assembler, DEFAULT=>$ENV{SHOVILL_ASSEMBLER} || 'spades', DESC=>"Assembler: ".join(' ', keys %ASSEMBLER) },
+    {OPT=>"plasmid!",VAR=>\$plasmid, DEFAULT=>0, DESC=>"Use plasmid mode if availabnlke" },
     {OPT=>"opts=s",     VAR=>\$opts,      DEFAULT=>'',   DESC=>"Extra assembler options in quotes eg. spades: '--sc'"},
     {OPT=>"kmers=s",    VAR=>\$kmers,     DEFAULT=>'',   DESC=>"K-mers to use <blank=AUTO>"},
     "MODULES",

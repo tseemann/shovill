@@ -66,7 +66,7 @@ ATTGTTCTGAGGGCCTCACTGGATTTTAACATCCTGCTAACGTCAGTTTCCAACGTCCTGTCG
 ### Conda
 
 ```
-conda install -c conda-forge -c bioconda shovill
+conda install bioconda::shovill
 shovill --version
 shovill --check
 ```
@@ -128,6 +128,7 @@ Filename | Description
 `shovill.log` | Full log file for bug reporting
 `shovill.corrections` | List of post-assembly corrections
 `contigs.gfa` | Assembly graph (spades)
+`skesa.gfa` | Assembly graph (skesa)
 `contigs.fastg` | Assembly graph (megahit)
 `contigs.LastGraph` | Assembly graph (velvet)
 `skesa.fasta` | Raw assembly (skesa)
@@ -186,6 +187,7 @@ RESOURCES
   --ram n.nn      Try to keep RAM usage below this many GB (default: 16)
 ASSEMBLER
   --assembler XXX Assembler: skesa velvet megahit spades (default: 'spades')
+  --plasmid       Enable plasmid mode where possible
   --opts XXX      Extra assembler options in quotes eg. spades: "--untrusted-contigs locus.fna" ... (default: '')
   --kmers XXX     K-mers to use <blank=AUTO> (default: '')
 MODULES
@@ -206,6 +208,11 @@ genome size.
 The genome size is needed to estimate depth and for the read error correction stage.
 If you don't provide `--gsize`, it will be estimated via k-mer frequencies using `mash`.
 It doesn't need to be a perfect estimate, just in the right ballpark.
+
+### --plasmid
+If the assembler supports a speical mode for
+assemlbiing plasmids, it will be enabled.
+Currently only `--assembler spades` supports this.
 
 ### --keepfiles
 This will keep all the intermediate files in `--outdir` so you can explore and debug.
