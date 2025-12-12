@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/tseemann/shovill.svg?branch=master)](https://travis-ci.org/tseemann/shovill)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Don't judge me](https://img.shields.io/badge/Language-Perl_5-steelblue.svg)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/shovill/badges/downloads.svg)](https://anaconda.org/bioconda/shovill)
 [![GitHub release](https://img.shields.io/github/release/tseemann/shovill.svg)](https://github.com/tseemann/shovill/releases)
 
 # Shovill
