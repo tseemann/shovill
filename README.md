@@ -96,7 +96,7 @@ singularity exec shovill.sif shovill --help
 
 ```
 git clone https://github.com/tseemann/shovill.git
-conda env create -n shovill -f shovill/environmet.yml
+conda env create -n shovill -f shovill/environment.yml
 conda activate shovill
 ./shovill/bin/shovill --help
 ./shovill/bin/shovill --check
