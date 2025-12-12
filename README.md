@@ -259,6 +259,11 @@ Variable | Option | Default
 
 ## FAQ
 
+* _Does `shovill` wotk with Spades 4.x ?_
+
+   SOme people are reporting issues, so I am 
+   removing support for 4.x until this is fixed
+
 * _Does `shovill` accept single-end reads?_
 
   No, but it might one day.
