@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.3.2";
+my $VERSION = "1.3.3";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -266,6 +266,7 @@ msg("Assembling reads with '$assembler'");
 my $asm = "$assembler.fasta";  # assembler result file to process further
 my $asmdir = $assembler;
 remove_tree($asmdir) if -d $asmdir;
+make_path($asmdir);
 
 if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
@@ -279,18 +280,17 @@ if ($assembler eq 'spades') {
   copy("$asmdir/contigs.fasta", $asm);
 }
 elsif ($assembler eq 'skesa') {
-  $opts .= " --fastq $SE" if $SE;
+  my $reads = "--reads $PE1,$PE2";
+  $reads .= " --reads $SE" if $SE;
   run_cmd(
-    "skesa --gz $opts --fastq $PE1,$PE2 --use_paired_ends"
+    "skesa $reads $opts"
    ." --contigs_out $asm --min_contig 1"
    ." --memory $ram_int --cores $cpus"
    ." --vector_percent 1"  # https://github.com/ncbi/SKESA/issues/7
   );
-  my $singles = $SE ? "--reads $SE" : "";
   run_cmd(
-    "gfa_connector --cores $cpus"
-   ." --use_paired_ends --reads $PE1,$PE2 $singles"
-   ." --contigs $asm --gfa $assembler.gfa"
+    "gfa_connector --cores $cpus $reads"
+   ." --contigs $asm --gfa $asmdir/contigs.gfa"
   );
 }
 elsif ($assembler eq 'megahit') {
@@ -392,13 +392,12 @@ msg("Assembly is $nbases, estimated genome size was $gsize ($delta%)");
 
 # Spades changed output names when 3.11 came out
 my $graph = '';
-for my $f ('assembly_graph_with_scaffolds.gfa', 'assembly_graph.gfa', 'contigs.fastg', 'contigs.LastGraph') {
-  my $g = "$asmdir/$f";
+for my $g ( glob("$asmdir/*.{gfa,fastg,LastGraph}") ) { 
   if (-r $g) {
     $g =~ m/\.(\w+)$/; # get file extension
-    $graph = "contigs.$1";
+    $graph = "$assembler.$1";
     msg("Using genome graph file '$g' => '$graph'");
-    move($g, $graph);
+    move($g, $graph) if $g ne $graph;
     last;
   }
 }

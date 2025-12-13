@@ -127,14 +127,8 @@ Filename | Description
 `contigs.fa` | The final assembly you should use
 `shovill.log` | Full log file for bug reporting
 `shovill.corrections` | List of post-assembly corrections
-`contigs.gfa` | Assembly graph (spades)
-`skesa.gfa` | Assembly graph (skesa)
-`contigs.fastg` | Assembly graph (megahit)
-`contigs.LastGraph` | Assembly graph (velvet)
-`skesa.fasta` | Raw assembly (skesa)
-`spades.fasta` | Raw assembled contigs (spades)
-`megahit.fasta` | Raw assembly (megahit)
-`velvet.fasta` | Raw assembly (velvet)
+`ASSEMBLER.fasta` | Raw assembly from ASSEMBLER (`--assembler`)
+`ASSEMBLER.}gfa,fastg,LastGraph}`` | Raw assembly graph from ASSEMBLER
 
 ### `contigs.fa`
 
