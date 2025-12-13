@@ -8,7 +8,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
+    #runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
@@ -20,7 +21,6 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: environment.yml
- #          python-version: 3.11
           miniforge-version: latest
           channels: conda-forge,bioconda
           channel-priority: strict
@@ -38,28 +38,10 @@ jobs:
           shovill --help
           ! shovill --doesnotexist
 
-      - name: Spades
+      - name: Test internal assemblers
         run: |
-          shovill --outdir out.spades --assembler spades --R1 test/R1.fq.gz --R2 test/R2.fq.gz
-          seqkit stats out.spades/contigs.fa
-
-      - name: Plasmid mode
-        run: |
-          shovill --plasmid --outdir out.plasmid  --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --noreadcorr --nocorr
-          seqkit stats out.plasmid/contigs.fa
-
-      - name: SKESA
-        run: |
-          shovill --outdir out.skesa --assembler skesa --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --nocorr
-          seqkit stats out.skesa/contigs.fa
-
-      - name: Megahit
-        run: |
-          shovill --outdir out.megahit --assembler megahit --R1 test/R1.fq.gz --R2 test/R2.fq.gz --trim
-          seqkit stats out.megahit/contigs.fa
-
-      - name: Velvet
-        run: |
-          shovill --outdir out.velvet --assembler velvet --R1 test/R1.fq.gz --R2 test/R2.fq.gz --ram 8 --noreadcorr --nocorr
-          seqkit stats out.velvet/contigs.fa
-
+          SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz""
+          for ASM in spades skesa megahit velvet ; do
+            $SHOVILL --outdir $ASM --asembler $ASM --nocorr --noreadcorr --nostitch
+            seqkit stats $ASM/contigs.fa
+          done  
