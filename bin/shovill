@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.3.0";
+my $VERSION = "1.3.1";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -139,25 +139,17 @@ map { msg("Read stats: $_ = ".$stat->{$_}) } (keys %$stat);
 # Estimate genome size (or use genome size provided) using KMC
 unless ($gsize) {
   my $kmer = 21;
-  my $minkc = 10;
+  my $minkc = 10; # FIXE: estimate dynamically with ska2 cov
   msg("Estimating genome size by counting unqiue $kmer-mers > frequency $minkc ");
   my $tmpout = File::Temp->newdir();
-
-  # @@@ MASH @@@
-  #run_cmd("mash sketch -o $tmpout/sketch -k 21 -m $minkc -r \Q$R1\E");
-  #unlink "$tmpout/sketch.msh";
-  # Estimated genome size: 1.99608e+06
-  my($bp) = grep { m/Estimated genome size/i } read_lines($LOGFILE);
-
-  # @@@ KMC @@@
   run_cmd("kmc -sm -m$half_ram -t$cpus -k$kmer -ci$minkc \Q$R1\E $tmpout/kmc $tmpout");
   unlink <$tmpout/kmc.*>;
   # No. of unique counted k-mers       :      2054586
   my($bp) = grep { m/unique counted k/i } read_lines($LOGFILE);
-
   # we use \S not \d here because it could be in scientific form for mash
   $bp =~ m/(\S+)\s*$/ or err("Could not determine genome size from '$bp'");
   $gsize = int($1);
+  $gsize > 0 or err("Bad genome depth, need > $minkc");
 }
 msg("Using genome size $gsize bp");
 
