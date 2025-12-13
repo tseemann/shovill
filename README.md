@@ -29,7 +29,7 @@ Please use [Megahit](https://github.com/voutcn/megahit) directly instead.
 ## Main steps
 
 1. Estimate genome size and read length from reads (unless `--gsize` provided)
-2. Reduce FASTQ files to a sensible depth (default `--depth 100`)
+2. Reduce FASTQ files to a sensible depth (default `--depth 150`)
 3. Trim adapters from reads (with `--trim` only)
 4. Conservatively correct sequencing errors in reads
 5. Pre-overlap ("stitch") paired-end reads
