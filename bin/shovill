@@ -12,11 +12,10 @@ use English qw(-no_match_vars);
 use Cwd qw(getcwd abs_path);
 use POSIX qw(strftime);
 use JSON::PP;
-use Data::Dumper;
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.4.0";
+my $VERSION = "1.4.1";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -40,7 +39,6 @@ my $t0 = time;                # basetime to measure running duration
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
 my %VERSION = (
-  'seqtk'       => 'seqtk 2>&1 | grep Version',
   'pigz'        => 'pigz --version 2>&1',
   'seqkit'      => 'seqkit --versiom 2>&1',
   'csvtk'       => 'csvtk --versiom 2>&1',
@@ -104,6 +102,8 @@ $namefmt or err("Please provide a --namefmt for contig IDs");
 $namefmt =~ m/%\d+d/ or err("--namefmt must have a %d placeholder for the contig counter");
 exists $ASSEMBLER{$assembler} or err("Invalid --assembler '$assembler'");
 $plasmid && $assembler ne 'spades' and err("--plasmidi only supported by --assembler spades");
+
+$ENV{'SEQKIT_THREADS'} = min(4, $cpus);
 
 # Check deps
 check_deps();
@@ -174,12 +174,15 @@ msg("Estimated sequencing depth: $orig_depth x");
 
 # Optionally subsample the data to --depth
 if ($depth and $depth > 0 and $orig_depth > 1.1 * $depth) {
-  my $factor = sprintf "%.3f", $depth / $orig_depth;
+  my $factor = sprintf "%.4f", $depth / $orig_depth;
   msg("Subsampling reads by factor $factor to get from ${orig_depth}x to ${depth}x");
-  run_cmd("seqtk sample \Q$R1\E $factor | pigz --fast -c -p $cpus > R1.sub.fq.gz");
-  $R1 = "R1.sub.fq.gz";
-  run_cmd("seqtk sample \Q$R2\E $factor | pigz --fast -c -p $cpus > R2.sub.fq.gz");
-  $R2 = "R2.sub.fq.gz";
+
+  my $S1 = "R1.sub.fq.gz";
+  run_cmd("seqkit sample -p $factor -o $S1 \Q$R1\E");
+  $R1 = $S1;
+  my $S2 = "R2.sub.fq.gz";
+  run_cmd("seqkit sample -p $factor -o $S2 \Q$R2\E");
+  $R2 = $S2;
 }
 else {
   msg("No read depth reduction requested or necessary.");
