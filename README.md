@@ -122,13 +122,15 @@ for each that just passes the shell arguments.
 
 ## Output files
 
+These are based on using `--assembler ASSEMBLER`:
+
 Filename | Description
 ---------|------------
 `contigs.fa` | The final assembly you should use
 `shovill.log` | Full log file for bug reporting
 `shovill.corrections` | List of post-assembly corrections
-`ASSEMBLER.fasta` | Raw assembly from ASSEMBLER (`--assembler`)
-`ASSEMBLER.{gfa,fastg,LastGraph}`` | Raw assembly graph from ASSEMBLER
+`ASSEMBLER.fasta` | Raw assembly from ASSEMBLER
+`ASSEMBLER.{gfa,fastg,LastGraph}` | Raw assembly graph from ASSEMBLER
 
 ### `contigs.fa`
 
