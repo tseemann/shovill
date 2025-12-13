@@ -67,3 +67,10 @@ jobs:
               done
             done
           done  
+
+      - name: Final stats
+        run: |
+          for FASTA in */contigs.fa ; do
+            seqkit stats $FASTA
+          done
+          grep -F 'size was' */shovill.log
