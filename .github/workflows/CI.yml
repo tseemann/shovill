@@ -39,7 +39,7 @@ jobs:
 
       - name: Test internal assemblers
         run: |
-          SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz""
+          SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz"
           for ASM in spades skesa megahit velvet ; do
             $SHOVILL --outdir $ASM --asembler $ASM --nocorr --noreadcorr --nostitch
             seqkit stats $ASM/contigs.fa
