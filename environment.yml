@@ -6,16 +6,17 @@ dependencies:
   - perl-file-spec
   - perl-findbin
   - spades >=3.14,<4
-  - skesa >=2.2
-  - megahit >=1.2.7
+  - skesa >=2.5
+  - megahit >=1.2.9
   - velvet >=1.2.10
   - lighter >=1.1
   - bwa >=0.7.17
-  - kmc >=3.1
+  - kmc >=3.2
   - flash >=1.2
   - pilon >=1.22
   - seqtk >=1.3
   - samclip >=0.4
   - trimmomatic >=0.36
   - samtools >=1.10
+  - seqkit
   - pigz
