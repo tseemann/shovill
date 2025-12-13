@@ -13,7 +13,7 @@ use POSIX qw(strftime);
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.3.1";
+my $VERSION = "1.3.2";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -28,7 +28,7 @@ my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
 my $MIN_BQ = 3;               # for trimming and stats and pilon
 my $MIN_MQ = 60;              # for pilon
 my $MIN_FLASH_OVERLAP = 20;   # for stitching
-my $MIN_RAM_GB = 2;           # for all tools
+my $MIN_RAM_GB = 8;           # for all tools
 my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
