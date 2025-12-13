@@ -45,8 +45,8 @@ jobs:
 
       - name: Plasmid mode
         run: |
-          shovill --plasmid --outdir out.spades --assembler spades --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --noreadcorr --nocorr
-          seqkit stats out.spades/contigs.fa
+          shovill --plasmid --outdir out.plasmid  --R1 test/R1.fq.gz --R2 test/R2.fq.gz --nostitch --noreadcorr --nocorr
+          seqkit stats out.plasmid/contigs.fa
 
       - name: SKESA
         run: |
