@@ -266,7 +266,6 @@ msg("Assembling reads with '$assembler'");
 my $asm = "$assembler.fasta";  # assembler result file to process further
 my $asmdir = $assembler;
 remove_tree($asmdir) if -d $asmdir;
-make_path($asmdir);
 
 if ($assembler eq 'spades') {
   # https://twitter.com/spadesassembler/status/907714056387252225
@@ -280,6 +279,7 @@ if ($assembler eq 'spades') {
   copy("$asmdir/contigs.fasta", $asm);
 }
 elsif ($assembler eq 'skesa') {
+  make_folder($asmdir); # it doesn't create one
   my $reads = "--reads $PE1,$PE2";
   $reads .= " --reads $SE" if $SE;
   run_cmd(
