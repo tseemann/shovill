@@ -37,10 +37,30 @@ jobs:
           shovill --help
           ! shovill --doesnotexist
 
-      - name: Test internal assemblers
+      - name: Prepare SHOVILL command
         run: |
           SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz"
+
+      - name: Test internal assemblers
+        run: |
           for ASM in spades skesa megahit velvet ; do
-            $SHOVILL --outdir $ASM --asembler $ASM --nocorr --noreadcorr --nostitch
+            $SHOVILL --outdir $ASM --assembler $ASM --nocorr --noreadcorr --nostitch
             seqkit stats $ASM/contigs.fa
+          done  
+
+      - name: Test option combos on SKESA 
+        run: |
+          SHOVILL="$SHOVILL --assembler skesa"
+          DIR=1
+          for TRIM in '' '--trim' ; do
+            for RCORR in '' '--noreadcorr' ; do
+              for STITCH in '' '--nostitch' ; do 
+                for ACORR in '' '--nocorr' ; do
+                  $SHOVILL --outdir $DIR \
+                    $TRIM $RCORR $STITCH $ACORR
+                  seqkit stats $DIR/contigs.fa
+                  ((DIR++))
+                done
+              done
+            done
           done  
