@@ -128,7 +128,7 @@ Filename | Description
 `shovill.log` | Full log file for bug reporting
 `shovill.corrections` | List of post-assembly corrections
 `ASSEMBLER.fasta` | Raw assembly from ASSEMBLER (`--assembler`)
-`ASSEMBLER.}gfa,fastg,LastGraph}`` | Raw assembly graph from ASSEMBLER
+`ASSEMBLER.{gfa,fastg,LastGraph}`` | Raw assembly graph from ASSEMBLER
 
 ### `contigs.fa`
 
