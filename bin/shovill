@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+use 5.32.0;
 use strict;
 use FindBin;
 use File::Path qw(make_path remove_tree);
@@ -6,14 +7,16 @@ use File::Basename;
 use File::Spec;
 use File::Copy;
 use File::Temp;
-use List::Util qw(min max);
+use List::Util qw(min max sum);
 use English qw(-no_match_vars);
 use Cwd qw(getcwd abs_path);
 use POSIX qw(strftime);
+use JSON::PP;
+use Data::Dumper;
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.3.3";
+my $VERSION = "1.4.0";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -134,9 +137,19 @@ copy($LOGFILE, $real_log);
 $LOGFILE = $real_log;
 
 # Get some read stats
-msg("Collecting raw read statistics with 'seqtk'");
-my $stat = read_stats($R1);
-map { msg("Read stats: $_ = ".$stat->{$_}) } (keys %$stat);
+msg("Collection stats for --R1 and --R2");
+my $ss = read_stats($R1, $R2);
+$ss->[0]->{'num_seqs'} == $ss->[1]->{'num_seqs'} 
+  or err("--R1 and --R2 have diffetent numbers of reads");
+#print Dumper($ss); exit;
+my $sum_Len = sum( $ss->[0]{sum_len} + $ss->[1]{sum_len} );
+my $avg_len = int( mean( $ss->[0]{avg_len},  $ss->[1]{avg_len} ) );
+my $max_len = max( $ss->[0]{max_len},  $ss->[1]{max_len} );
+my $min_len = min( $ss->[0]{min_len},  $ss->[1]{min_len} );
+msg("min_len = $min_len");
+msg("avg_len = $avg_len");
+msg("max_len = $max_len");
+msg("sum_Len = $sum_Len");
 
 # Estimate genome size (or use genome size provided) using KMC
 unless ($gsize) {
@@ -156,7 +169,7 @@ unless ($gsize) {
 msg("Using genome size $gsize bp");
 
 # Estimate sequencing depth
-my $orig_depth = int( $stat->{'total_bp'} / $gsize );
+my $orig_depth = int( $sum_Len / $gsize );
 msg("Estimated sequencing depth: $orig_depth x");
 
 # Optionally subsample the data to --depth
@@ -192,10 +205,9 @@ else {
 }
 
 # Calculating read length distribution
-my $RLEN = $stat->{'avg_len'};
-msg("Average read length looks like $RLEN bp");
+msg("Average read length is $avg_len bp");
 unless ($minlen) {
-  $minlen = int( $RLEN / 2);
+  $minlen = int( $min_len / 2);
   msg("Automatically setting --minlen to $minlen");
 }
 
@@ -205,16 +217,15 @@ if ($kmers) {
   # extract user kmers
   msg("Examing provided --kmers $kmers");
   @kmers = split m/\s*\D+\s*/, $kmers;
-  my $arl = $stat->{'avg_len'};
   for my $k (@kmers) {
     $k <= $MAX_K or err("k-mer $k is bigger than maximum allowed $MAX_K");
     $k >= $MIN_K or err("k-mer $k is smaller than minimum recommended $MIN_K");
-    $k < $arl or err("k-mer $k is greater than average read length $arl");
+    $k < $avg_len or err("k-mer $k is greater than average read length $avg_len");
   }
 }
 else {
-  $MAX_K = min( $MAX_K, int($KMER_READ_FRAC * $RLEN) );
-  $MIN_K = 21 if $stat->{'avg_len'} < 75;   # hard-coded choice here....
+  $MAX_K = min( $MAX_K, int($KMER_READ_FRAC * $avg_len) );
+  $MIN_K = 21 if $avg_len < 75;   # hard-coded choice here....
   msg("Setting k-mer range to ($MIN_K .. $MAX_K)");
   my $kn = 5; # max(4, $cpus);
   my $ks = max(5, int( ($MAX_K - $MIN_K) / ($kn-1) ) );
@@ -249,7 +260,7 @@ unless ($nostitch) {
   # WARNING: An unexpectedly high proportion of combined pairs (13.03%)
   # overlapped by more than 80 bp, the --max-overlap (-M) parameter.
   #my $max_overlap = $stat->{'max_len'} - int( $MIN_FLASH_OVERLAP / 2 ) ;
-  my $max_overlap = $stat->{'max_len'};
+  my $max_overlap = $max_len;
   run_cmd(
     "flash -m $MIN_FLASH_OVERLAP -M $max_overlap"
    ." -d . -o flash -z -t $cpus $COR1 $COR2"
@@ -499,6 +510,18 @@ sub spades_version {
 }
 
 #----------------------------------------------------------------------
+sub slurp {
+  my($fname) = @_;
+ open(my $fh, '<', $fname) or err("Can't slurp '$fname'");
+  my $data; 
+  { 
+    local $/;
+    $data = <$fh>;
+  }
+  return $data;
+}
+
+#----------------------------------------------------------------------
 sub count_changes {
   my($fname) = @_;
   my @diffs = read_lines($fname);
@@ -517,22 +540,16 @@ sub count_changes {
 
 #----------------------------------------------------------------------
 sub read_stats {
-  my($R1) = @_;
+  my($R1,$R2) = @_;
   my $sf = File::Temp->new();
-  my $stat;
-  # we use MIN_BQ to get an idea of what it would be after quality clipping
-  run_cmd("seqtk fqchk -q$MIN_BQ \Q$R1\E >".$sf->filename);
-  my @row = read_lines($sf->filename);
-  unlink $sf->filename;
-#  msg($row[0]);
-  for my $tag ('min_len', 'max_len', 'avg_len') {
-    $row[0] =~ m/$tag:\s*(\d+(\.\d+)?);/ or err("Can't parse $tag from: $row[0]");
-    $stat->{$tag} = int( $1 + 0.5 );
-  }
-  $row[2] =~ m/^ALL\s+(\d+)/ or err("Can't parse ALL #bases from: $row[2]");
-  $stat->{'total_bp'} = $1 * 2;  # multiply by 2 as only using R1 (hack)
-  return $stat;
+  run_cmd(
+    "(seqkit stats --quiet --threads 2  -T \Q$R1\E \Q$R2\E"
+   ." | csvtk csv2json -t > $sf )",
+   'fastq'
+  );
+  return decode_json(slurp($sf->filename));
 }
+
 
 #----------------------------------------------------------------------
 sub make_folder {
@@ -684,6 +701,11 @@ sub write_lines {
   open my $FILE, '>', $fname or err("Could not write to $fname");
   print $FILE @lines;
   close $FILE;
+}
+
+#----------------------------------------------------------------------
+sub mean {
+  return sum(@_) / scalar(@_);
 }
 
 #----------------------------------------------------------------------

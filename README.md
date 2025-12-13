@@ -111,7 +111,9 @@ You will need to install all the dependencies manually:
 * [SAMtools](http://www.htslib.org/) >= 1.3 (prefer >= 1.10)
 * [BWA MEM](https://sourceforge.net/projects/bio-bwa/files/) 
 * [KMC](http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=kmc&subpage=about)
-* [seqtk](https://github.com/lh3/seqtk/releases)
+* [seqtk](https://github.com/lh3/seqtk)
+* [seqkit](https://github.com/shenwei356/seqkit)
+* [csvtk]](https://github.com/shenwei356/csvtk)
 * [pigz](https://zlib.net/pigz/). Pigz should be available with your OS distribution.
 * [Pilon](https://github.com/broadinstitute/pilon/releases/) (Java).
 * [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) (Java)
