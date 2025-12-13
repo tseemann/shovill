@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  RAM: "14"
+  KMER: "41"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,16 +44,16 @@ jobs:
       - name: Test internal assemblers
         run: |
           set -eu
-          SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz"
+          SHOVILL="shovill --ram ${RAM} --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz"
           for ASM in spades skesa megahit velvet ; do
-            $SHOVILL --outdir $ASM --assembler $ASM --nocorr --noreadcorr --nostitch
+            $SHOVILL --outdir $ASM --assembler $ASM
             seqkit stats $ASM/contigs.fa
-          done  
+            done  
 
       - name: Test option combos on SKESA 
         run: |
           set -eu
-          SHOVILL="shovill --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz --assembler skesa"
+          SHOVILL="shovill --ram ${RAM} --cpus $(nproc) --R1 test/R1.fq.gz --R2 test/R2.fq.gz --assembler skesa --kmer ${KMER}"
           DIR=1
           for TRIM in '' '--trim' ; do
             for RCORR in '' '--noreadcorr' ; do
