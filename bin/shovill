@@ -39,6 +39,8 @@ my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 my %VERSION = (
   'seqtk'       => 'seqtk 2>&1 | grep Version',
   'pigz'        => 'pigz --version 2>&1',
+  'seqkit'      => 'seqkit --versiom 2>&1',
+  'csvtk'       => 'csvtk --versiom 2>&1',
   'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
@@ -402,6 +404,14 @@ for my $g ( glob("$asmdir/*.{gfa,fastg,LastGraph}") ) {
   }
 }
 $graph or msg("Note: $assembler does not produce a graph file");
+
+# Output stats
+run_cmd(
+  "(  seqkit stats -T -a -N 50 $outdir/contigs.fa"
+ ." | csvtk -t transpose"
+ ." | tail -n +4"
+ ." | csvtk pretty -t -H )"
+ , 'stats');
 
 # Cleanup time!
 unless ($keepfiles) {
