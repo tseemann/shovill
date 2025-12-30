@@ -39,7 +39,7 @@ my $t0 = time;                # basetime to measure running duration
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
 my %VERSION = (
-  'seqkit'      => 'seqkit 2>&1 | grep Version',
+  'seqkit'      => 'seqkit version',
   'csvtk'       => 'csvtk --version 2>&1',
   'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
