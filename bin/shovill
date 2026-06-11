@@ -33,8 +33,8 @@ my $MIN_FLASH_OVERLAP = 20;   # for stitching
 my $MIN_RAM_GB = 7;           # for all tools
 my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
-my @CMDLINE = ($0, @ARGV);    # save this for printing to log later
-my $t0 = time;                # basetime to measure running duration
+my @CMDLINE = ($0, @ARGV);       # save this for printing to log later
+my $t0 = time;                   # basetime to measure running duration
 
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
