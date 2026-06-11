@@ -15,7 +15,7 @@ use JSON::PP;
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.4.2";
+my $VERSION = "1.4.3";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
@@ -24,13 +24,13 @@ my $ADAPTERS = "$APPDIR/db/trimmomatic.fa"; # hard-code this for Conda etc.
 my $LOGTMP = File::Temp->new();
 my $LOGFILE = $LOGTMP->filename;
 
-my $MIN_K = 31;                  # sensible minimum, although prefer higher
-my $MAX_K = 127;                 # maximum for most assemblers
-my $KMER_READ_FRAC = 0.75;       # ensure max kmer below this prop of read length
-my $MIN_BQ = 3;                  # for trimming and stats and pilon
-my $MIN_MQ = 60;                 # for pilon
-my $MIN_FLASH_OVERLAP = 20;      # for stitching
-my $MIN_RAM_GB = int(8 / 1.024); # for all tools
+my $MIN_K = 31;               # sensible minimum, although prefer higher
+my $MAX_K = 127;              # maximum for most assemblers
+my $KMER_READ_FRAC = 0.75;    # ensure max kmer below this prop of read length
+my $MIN_BQ = 3;               # for trimming and stats and pilon
+my $MIN_MQ = 60;              # for pilon
+my $MIN_FLASH_OVERLAP = 20;   # for stitching
+my $MIN_RAM_GB = 7;           # for all tools
 my $TRIMOPT = "ILLUMINACLIP:$ADAPTERS:1:30:11 LEADING:$MIN_BQ TRAILING:$MIN_BQ MINLEN:30 TOPHRED33";
 
 my @CMDLINE = ($0, @ARGV);       # save this for printing to log later
@@ -39,15 +39,15 @@ my $t0 = time;                   # basetime to measure running duration
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
 my %VERSION = (
-  'seqkit'      => 'seqkit --versiom 2>&1',
-  'csvtk'       => 'csvtk --versiom 2>&1',
+  'seqkit'      => 'seqkit version',
+  'csvtk'       => 'csvtk --version 2>&1',
   'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
   'flash'       => 'flash --version 2>&1 | grep FLASH',
   'spades.py'   => 'spades.py  --version 2>&1',
   'skesa'       => 'skesa --version 2>&1 | grep SKESA',
-  'gfa_connector' => 'gfa_connector --version 2>&1 | grep gfa_connector',
+  'gfa_connector' => 'gfa_connector --version 2>&1 | grep "gfa_connector [[:digit:]].[[:digit:]].[[:digit:]]"',
   'megahit'     => 'megahit --version 2>&1',
   'megahit_toolkit' => 'megahit_toolkit dumpversion 2>&1',
   'velveth'     => 'velveth 2>&1 | grep Version',
