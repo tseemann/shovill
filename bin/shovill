@@ -15,7 +15,7 @@ use JSON::PP;
 
 # Globals
 my $EXE = basename($PROGRAM_NAME);
-my $VERSION = "1.4.2";
+my $VERSION = "1.4.3";
 my $AUTHOR = "Torsten Seemann";
 my $URL = "https://github.com/tseemann/shovill";
 my $BAM = "$EXE.bam";
