@@ -39,15 +39,15 @@ my $t0 = time;                # basetime to measure running duration
 my %ASSEMBLER = ( map { $_ => 1 } qw(spades skesa megahit velvet) );
 
 my %VERSION = (
-  'seqkit'      => 'seqkit --versiom 2>&1',
-  'csvtk'       => 'csvtk --versiom 2>&1',
+  'seqkit'      => 'seqkit version',
+  'csvtk'       => 'csvtk --version 2>&1',
   'kmc'         => 'kmc -h 2>&1 | grep KMC',
   'trimmomatic' => 'trimmomatic -version 2>&1 | grep -v _JAVA',
   'lighter'     => 'lighter -v 2>&1',
   'flash'       => 'flash --version 2>&1 | grep FLASH',
   'spades.py'   => 'spades.py  --version 2>&1',
   'skesa'       => 'skesa --version 2>&1 | grep SKESA',
-  'gfa_connector' => 'gfa_connector --version 2>&1 | grep gfa_connector',
+  'gfa_connector' => 'gfa_connector --version 2>&1 | grep "gfa_connector [[:digit:]].[[:digit:]].[[:digit:]]"',
   'megahit'     => 'megahit --version 2>&1',
   'megahit_toolkit' => 'megahit_toolkit dumpversion 2>&1',
   'velveth'     => 'velveth 2>&1 | grep Version',
